@@ -1,3 +1,5 @@
+import { MicrophonePanel } from './MicrophonePanel';
+
 export function App() {
   return (
     <main className="app">
@@ -11,13 +13,14 @@ export function App() {
       </header>
 
       <aside className="status" aria-label="Development status">
-        <span className="badge">Project foundation</span>
+        <span className="badge">Capture milestone</span>
         <p>
-          This is the application starter, not a working analyzer yet.
-          Microphone capture, live plots, freezing, and exports are next.
+          Live microphone levels are ready to try.
+          Spectrograms, waveforms, freezing, and exports are still in development.
         </p>
-        <p className="privacy">Microphone inactive — no audio is being captured.</p>
       </aside>
+
+      <MicrophonePanel />
 
       <section className="workspace" aria-label="Planned visualization workspace">
         <section className="panel" aria-labelledby="spectrogram-heading">

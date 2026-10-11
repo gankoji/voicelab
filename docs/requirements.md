@@ -1,6 +1,8 @@
 # Requirements
 
-Status: agreed product direction; implementation pending except the starter.
+Status: agreed product direction; capture/level-meter milestone implemented.
+See [capture validation](capture-validation.md) for verified behavior and limits;
+the remaining visualization and tracking requirements are not implemented yet.
 Requirement IDs are stable references for issues, code reviews, and tests.
 “Phase 2” means required for the application, not an optional enhancement.
 
@@ -23,6 +25,7 @@ The app is educational, not diagnostic.
 | CAP-02 | Choose among available inputs, with useful permission, disconnection, and interruption handling. | Supported device changes work; unavailable inputs produce a recoverable state rather than stale “live” plots. Labels may appear only after permission. |
 | CAP-03 | Request disabled automatic gain control, noise suppression, and echo cancellation where supported. Report actual sample rate and reported processing state. | Unsupported or unknown settings are disclosed; the UI never promises bit-perfect/raw hardware capture. |
 | CAP-04 | Show input level and a digital clipping/near-full-scale warning. | Known test signals produce documented peak/RMS levels and warning behavior. Digital checks are not a guarantee against analog clipping. |
+| CAP-05 | Stop capture when the page is hidden or left; require explicit restart. | Tab switching, pagehide, and capture interruptions never lead to silent automatic background recording. |
 | VIS-01 | Scrolling STFT spectrogram: shared time axis, frequency axis, color level legend. | Tones, harmonics, sweeps, and transients appear at expected coordinates under the validation plan. |
 | VIS-02 | Detailed waveform: min/max per display column when zoomed out, individual samples when zoomed in. | Brief peaks are preserved; samples are inspectable at high zoom; it stays aligned with the spectrogram. |
 | VIS-03 | Optional RMS amplitude line. | Uses the same time base and explicitly labeled units; a logarithmic RMS line cannot silently share the linear waveform scale. |

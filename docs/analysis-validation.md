@@ -1,8 +1,9 @@
 # Analysis validation plan
 
 Status: future DSP acceptance plan, not a report of current accuracy.
-The starter tests cover the UI shell only. Algorithm-specific tolerances
-must be set before each feature is accepted.
+Current tests cover capture lifecycle, bounded sample transport, digital
+peak/RMS, and browser capture workflows; see [capture validation](capture-validation.md).
+Spectral/tracking tolerances must be set before those features are accepted.
 
 ## Reproducible fixtures
 

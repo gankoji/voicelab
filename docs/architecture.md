@@ -1,7 +1,8 @@
 # Architecture
 
-Status: implementation design. The current source is a UI starter; the audio
-pipeline below is not yet implemented.
+Status: capture and peak/RMS measurement implemented; spectral analysis, retained
+history, visualization, snapshots, and tracking below remain implementation
+design. See [capture validation](capture-validation.md) for the current boundary.
 
 ## Decisions
 
@@ -57,6 +58,25 @@ Verify that behavior in every supported browser.
 
 ## Bounded resources and ownership
 
+The capture milestone uses four 2048-sample Float32 buffers (32 KiB total) on
+a direct worklet/worker MessagePort. Block duration is about 42.7 ms at 48 kHz
+or 46.4 ms at 44.1 kHz; it is not an end-to-end latency guarantee. The clock
+origin is the first input processed, not node construction. Missing sample
+intervals after that origin are reported, including discarded partial blocks.
+
+The UI pulls peak/RMS summaries every 100 ms, with at most one unanswered
+request. Each RMS is sample-weighted across the blocks since the previous read;
+levels are not averaged in dB. Silence is -Infinity dBFS, rendered as −∞;
+the meter visually floors at -60 dBFS. A sample magnitude >= `10^(-0.1/20)`
+triggers a near-clipping warning held for one second of the audio timeline.
+This is not a true-peak meter or a detector of upstream analog clipping.
+
+The controller rejects stale sessions, closes late-arriving permission streams,
+and tears down capture on track mute/end, context suspension, processor/worker
+failure, or a three-second sample stall. Worker initialization has a five-second
+deadline. Keeping the page visible is required: pagehide/hidden stops capture,
+with explicit restart rather than background recording.
+
 Use a fixed pool of sample buffers and a bounded number of in-flight batches.
 Transfer ownership explicitly, recycle completed buffers, and reject stale
 session messages. If the consumer cannot keep up, record the missing sample
@@ -91,7 +111,7 @@ when browser policy requires it, with missing time marked.
 
 ### Spectrogram and level
 
-Use a documented STFT window, FFT normalization, hop size, and spectral
+For the upcoming spectrogram, use a documented STFT window, FFT normalization, hop size, and spectral
 magnitude/power reference. Distinguish spectral bin level from time-domain
 peak/RMS dBFS. Floors are display decisions, not nonzero measured silence.
 Changing intensity or color does not change audio.

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('loads the foundation without runtime errors or horizontal overflow', async ({ page }) => {
+test('loads the capture interface without runtime errors or horizontal overflow', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
 

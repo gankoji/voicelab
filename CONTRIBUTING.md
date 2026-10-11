@@ -10,7 +10,8 @@ use the [roadmap](docs/roadmap.md) to keep changes focused.
 2. Keep each change scoped to a requirement or milestone.
 3. Add unit tests for deterministic logic and browser tests for user workflows.
 4. Run `npm run check` and, after installing Chromium with
-   `npx playwright install chromium`, `npm run test:e2e`.
+   `npx playwright install chromium`, `npm run test:e2e` and
+   `npm run test:e2e:dev` sequentially.
 5. Explain behavior changes, validation, and known limitations in the review.
 
 Commit the npm lockfile when dependencies change. Review dependency licenses

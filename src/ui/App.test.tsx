@@ -2,12 +2,13 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { App } from './App';
 
-describe('application foundation', () => {
-  it('identifies the starter honestly instead of presenting simulated analysis', () => {
+describe('capture application', () => {
+  it('distinguishes working capture from the upcoming plots', () => {
     render(<App />);
 
     expect(screen.getByRole('heading', { name: 'Voice Lab' })).toBeInTheDocument();
-    expect(screen.getByText(/not a working analyzer yet/)).toBeInTheDocument();
+    expect(screen.getByText(/exports are still in development/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Start microphone' })).toBeEnabled();
     expect(screen.getByText(/Microphone inactive/)).toBeInTheDocument();
   });
 

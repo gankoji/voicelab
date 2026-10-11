@@ -3,26 +3,28 @@
 The first release is the live observation workflow. Pitch and formant tracking
 are required Phase 2 capabilities, not optional backlog ideas.
 
-## Foundation — this change
+## Foundation — completed
 
 - [x] Requirements, architecture, validation plan, and milestone sequence.
 - [x] MIT license and contributor/development documentation.
 - [x] TypeScript/React/Vite starter with explicit development placeholders.
 - [x] Unit, build/typecheck, and browser smoke-test configuration.
-- [ ] Microphone capture or DSP (intentionally not part of the foundation).
 
-## Phase 1A — capture proof of concept
+## Phase 1A — capture proof of concept, implemented for manual validation
 
-CAP-01–04, PRIV-01.
+CAP-01–05, PRIV-01.
 
-- Explicit start/stop, permission recovery, input enumeration/selection.
-- Report actual sample rate and browser-reported processing settings.
-- Worklet batching and bounded worker transport; input peak/RMS/clipping meter.
-- Lifecycle tests, including stop during a pending permission request.
-- Establish desktop reference hardware and secure-context deployment setup.
+- [x] Explicit start/stop, permission recovery, input enumeration/selection.
+- [x] Report actual sample rate and browser-reported processing settings.
+- [x] Worklet batching and bounded worker transport; input peak/RMS/clipping meter.
+- [x] Lifecycle tests, including stop during a pending permission request.
+- [x] Synthetic-microphone Chromium tests against both built app and dev server.
+- [ ] Physical microphone/permission walkthrough on the singer's machine.
+- [ ] Establish reference hardware; certify other browsers and real mobile devices.
 
 Exit: real microphone levels work without speaker feedback, capture resources
 are released reliably, and input discontinuities are recorded.
+Current evidence and manual steps: [capture validation](capture-validation.md).
 
 ## Phase 1B — analysis vertical slice
 
