@@ -1,9 +1,10 @@
 # Requirements
 
-Status: capture/level meters and live visualization implemented.
-See [capture validation](capture-validation.md) and
-[visualization validation](visualization-validation.md) for evidence and limits.
-Freeze/inspection, export, and tracking requirements remain unimplemented.
+Status: capture, levels, live/frozen visualization, zoom/inspect, export,
+preferences, and F0/12TET pitch tracking are implemented; F1–F3 formants (Phase 2B)
+remain unimplemented. See [capture validation](capture-validation.md),
+[visualization validation](visualization-validation.md), and
+[release hardening](release-hardening.md) for evidence and limits.
 Requirement IDs are stable references for issues, code reviews, and tests.
 “Phase 2” means required for the application, not an optional enhancement.
 
@@ -60,6 +61,7 @@ document alone is not an accuracy or compatibility guarantee.
 | PIT-03 | Preserve meaningful vibrato and disclose smoothing/latency. | No unexplained octave jumps or smoothing that hides tested vibrato; gaps and low-confidence intervals are visible. |
 | FOR-01 | Time-aligned F1–F3 estimates and spectrogram tracks. | Tests cover known synthetic resonances and licensed reference speech/singing; supported conditions and observed errors are documented. |
 | FOR-02 | Expose uncertainty and reject implausible/unsupported estimates. | High-F0, sparse harmonics, breathiness, and noisy/unvoiced input may yield gaps rather than confident false tracks. No claim that formants equal bright harmonics. |
+| FOR-03 | Provide fine-grained analysis for formants: longer analysis windows / finer FFT frequency resolution than the live spectrogram presets, accepting extra latency or compute time. | A formant pass can select a finer FFT (e.g. N=8192/16384) or an equivalently longer window; the chosen window/hop, bin spacing, and latency cost are recorded, and the frozen/exported path can use it without slowing the live spectrogram loop. |
 | ANA-01 | Export timestamped tracking results with units, validity/confidence fields, and reproducible analysis settings. | Missing values are distinct from zero; export can be aligned back to audio sample positions. |
 
 ## Cross-cutting requirements

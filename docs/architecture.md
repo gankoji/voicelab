@@ -166,6 +166,13 @@ Window duration and bin spacing depend on actual sample rate: `N / fs` seconds
 and `fs / N` Hz. Zero-padding can interpolate the displayed spectrum but does
 not improve true frequency resolution. Presets explain timing/detail tradeoffs.
 
+The live spectrogram presets (N=1024/2048/4096) are sized for scrolling-display
+latency, not maximum accuracy. Formant estimation may use longer windows or
+finer FFT resolutions (for example N=8192/16384) when finer frequency detail
+takes priority over latency. Because formants update far more slowly than the
+spectrogram scroll, that cost belongs on the frozen/exported analysis path, not
+in the live loop.
+
 ### F0 and 12TET
 
 Evaluate YIN and McLeod pitch detection against the validation fixtures.
@@ -191,6 +198,12 @@ Evaluate an LPC-based pipeline: appropriate resampling/pre-emphasis/windowing,
 LPC estimation, root-to-frequency/bandwidth conversion, plausibility checks,
 and temporal association. Model order and preprocessing are sample-rate
 dependent and must be recorded.
+
+Measure the spectral envelope with enough resolution for the task. For FFT-based
+envelope estimation this means a longer analysis window (finer bin spacing, e.g.
+N=8192/16384); for LPC it means a model order sufficient to resolve adjacent
+resonances. Record and expose the effective resolution and latency; do not
+present bin spacing or model order alone as accuracy.
 
 High F0 produces sparse harmonics and can make formants indeterminate.
 Breathiness, noise, and source/tract interactions also matter. F1–F3 are

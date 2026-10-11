@@ -104,12 +104,14 @@ uncertainty or smoothing away expressive pitch changes.
 
 ## Phase 2B — formants
 
-FOR-01–02, ANA-01.
+FOR-01–03, ANA-01.
 
-- Evaluate LPC-based estimation and alternatives if LPC fails the target cases.
-- Validate synthetic resonances and licensed annotated reference material.
-- Track F1–F3 with bandwidth/plausibility checks and temporal association.
-- Show gaps/uncertainty and explain high-F0 limitations.
+- [x] Specify fine-grained formant analysis: finer FFT / longer windows than the
+      live spectrogram presets, with the latency/compute tradeoff recorded.
+- [ ] Evaluate LPC-based estimation and alternatives if LPC fails the target cases.
+- [ ] Validate synthetic resonances and licensed annotated reference material.
+- [ ] Track F1–F3 with bandwidth/plausibility checks and temporal association.
+- [ ] Show gaps/uncertainty and explain high-F0 limitations.
 
 Exit: supported conditions and error/rejection behavior are documented and
 tested; unreliable estimates are not presented as measured facts.

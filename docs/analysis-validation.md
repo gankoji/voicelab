@@ -36,6 +36,7 @@ Do not treat another analyzer's output as unquestionable ground truth.
 | Noise/breathiness | Voicing precision/recall, confidence/rejection behavior, not only accepted-frame accuracy. | PIT-01, FOR-02 |
 | 12TET conversion | A4, C4, octave boundaries, half-step ties, alternate reference, invalid inputs. | PIT-02 |
 | Synthetic source/filter vowel | Known pole/resonance frequencies and bandwidths; report F1–F3 errors and rejected-frame coverage. | FOR-01–02 |
+| Fine-grained formant analysis | Same vowel analyzed at fine FFT/window (e.g. N=8192/16384) vs the live preset; report resolution gain, latency, and where the finer setting improves adjacent-resonance separation. | FOR-03 |
 | Increasing F0 | Same filter across source pitches: show where sparse harmonics make formants unreliable. | FOR-02 |
 
 ## Browser integration and privacy
