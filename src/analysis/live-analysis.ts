@@ -72,7 +72,7 @@ export class LiveAnalysis {
     return {
       sampleRate: this.sampleRate, startSample, endSample, settings, width, rows: SPECTRUM_ROWS,
       spectrum: this.spectra.rasterize(startSample, endSample, width, SPECTRUM_ROWS, this.sampleRate, settings),
-      minimum, maximum, rms, trace, traceFirstSample,
+      minimum, maximum, rms, trace, traceFirstSample, referenceEndSample: endSample,
     };
   }
 }

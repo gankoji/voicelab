@@ -27,14 +27,17 @@ function prepare(canvas: HTMLCanvasElement) {
   return { context, width, height, plotWidth: width - PLOT_LEFT - PLOT_RIGHT, plotHeight: height - PLOT_TOP - PLOT_BOTTOM };
 }
 
-function timeAxis(context: CanvasRenderingContext2D, width: number, height: number, seconds: number) {
+function formatTime(seconds: number) {
+  return Math.abs(seconds) < 1 ? `${Number((seconds * 1000).toFixed(2))} ms` : `${Number(seconds.toFixed(2))} s`;
+}
+
+function timeAxis(context: CanvasRenderingContext2D, width: number, height: number, t0: number, t1: number) {
   const plotWidth = width - PLOT_LEFT - PLOT_RIGHT;
   context.fillStyle = '#bdd0d7';
   for (let i = 0; i <= 4; i++) {
-    const t = -seconds * (1 - i / 4);
-    const label = seconds < 1 ? `${Number((t * 1000).toFixed(2))} ms` : `${Number(t.toFixed(2))} s`;
+    const t = t0 + (t1 - t0) * i / 4;
     context.textAlign = i === 0 ? 'left' : i === 4 ? 'right' : 'center';
-    context.fillText(label, PLOT_LEFT + i / 4 * plotWidth, height - 10);
+    context.fillText(formatTime(t), PLOT_LEFT + i / 4 * plotWidth, height - 10);
   }
 }
 
@@ -110,8 +113,10 @@ export class PlotRenderer {
       const y = PLOT_TOP + (1 - normalized) / 2 * wave.plotHeight;
       wave.context.fillText(formatAmplitude(amplitude), PLOT_LEFT - 8, y + 4);
     }
-    timeAxis(spectral.context, spectral.width, spectral.height, settings.historySeconds);
-    timeAxis(wave.context, wave.width, wave.height, settings.historySeconds);
+    const t0 = frame ? (frame.startSample - frame.referenceEndSample) / frame.sampleRate : -settings.historySeconds;
+    const t1 = frame ? (frame.endSample - frame.referenceEndSample) / frame.sampleRate : 0;
+    timeAxis(spectral.context, spectral.width, spectral.height, t0, t1);
+    timeAxis(wave.context, wave.width, wave.height, t0, t1);
 
     // Useful diagnostics also let integration tests check that both views share a frame.
     for (const canvas of [spectrogram, waveform]) {

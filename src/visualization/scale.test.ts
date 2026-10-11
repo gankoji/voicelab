@@ -10,6 +10,7 @@ function frame(minimum: Float32Array<ArrayBuffer>, maximum: Float32Array<ArrayBu
     spectrum: new Uint8Array(minimum.length),
     minimum, maximum, rms: new Float32Array(minimum.length),
     trace, traceFirstSample: 0,
+    referenceEndSample: 0,
   };
 }
 

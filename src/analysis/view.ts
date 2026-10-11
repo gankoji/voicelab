@@ -78,4 +78,6 @@ export interface PlotFrame {
   /** Individual samples at fine zoom, otherwise empty. NaN marks missing input. */
   trace: Float32Array<ArrayBuffer>;
   traceFirstSample: number;
+  /** The "now" anchor for time labels (latest analyzable sample). */
+  referenceEndSample: number;
 }

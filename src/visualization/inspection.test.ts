@@ -17,6 +17,7 @@ function frame(overrides: Partial<PlotFrame> = {}): PlotFrame {
     rms: new Float32Array(100),
     trace: new Float32Array(0),
     traceFirstSample: 0,
+    referenceEndSample: 0,
     ...overrides,
   };
 }
@@ -56,5 +57,11 @@ describe('frozen-frame inspection', () => {
     f.minimum[50] = NaN;
     f.maximum[50] = NaN;
     expect(inspectWaveform(f, 0.5)).toMatchObject({ minimum: null, maximum: null });
+  });
+
+  it('reports absolute time relative to the reference end when panned back', () => {
+    const f = frame({ startSample: -960000, endSample: -480000, referenceEndSample: 0 });
+    expect(inspectSpectrum(f, 1, 0.5).timeSeconds).toBeCloseTo(-10, 6);
+    expect(inspectSpectrum(f, 0, 0.5).timeSeconds).toBeCloseTo(-20, 6);
   });
 });

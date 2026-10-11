@@ -16,8 +16,8 @@ export interface WaveformReading {
 }
 
 function timeAt(frame: PlotFrame, fraction: number) {
-  const duration = (frame.endSample - frame.startSample) / frame.sampleRate;
-  return -(1 - fraction) * duration;
+  const sample = frame.startSample + fraction * (frame.endSample - frame.startSample);
+  return (sample - frame.referenceEndSample) / frame.sampleRate;
 }
 
 export function inspectSpectrum(frame: PlotFrame, xFraction: number, yFraction: number): SpectrumReading {

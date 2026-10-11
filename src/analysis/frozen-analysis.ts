@@ -112,7 +112,7 @@ export class FrozenAnalysis {
     return {
       sampleRate: this.sampleRate, startSample: start, endSample: end, settings, width, rows: SPECTRUM_ROWS,
       spectrum: this.spectra.rasterize(start, end, width, SPECTRUM_ROWS, this.sampleRate, settings),
-      minimum, maximum, rms, trace, traceFirstSample,
+      minimum, maximum, rms, trace, traceFirstSample, referenceEndSample: this.displayEnd,
     };
   }
 }
