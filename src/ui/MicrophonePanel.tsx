@@ -20,13 +20,15 @@ function processingLabel(value: boolean | string | undefined) {
   return value === undefined ? 'Unknown' : value ? 'On' : 'Off';
 }
 
-export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, frozen, freezePending, onFreezeToggle, children }: {
+export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, frozen, pausePending, onPauseToggle, onStop, onRecord, children }: {
   controller: CaptureController;
   settingsOpen: boolean;
   onSettingsChange: (open: boolean) => void;
   frozen: boolean;
-  freezePending: boolean;
-  onFreezeToggle: () => void;
+  pausePending: boolean;
+  onPauseToggle: () => void;
+  onStop: () => void;
+  onRecord: (deviceId: string) => void;
   children: ReactNode;
 }) {
   const capture = useSyncExternalStore(controller.subscribe, controller.getSnapshot);
@@ -114,7 +116,7 @@ export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, fr
             type="button"
             className={active ? 'record-button is-active' : 'record-button'}
             title={active ? 'Stop microphone capture' : 'Analyze live microphone input — not saved'}
-            onClick={() => active ? controller.stop() : void controller.start(deviceId)}
+            onClick={() => active ? onStop() : onRecord(deviceId)}
           >
             <span className={active ? 'stop-icon' : 'record-icon'} aria-hidden="true" />
             {active ? 'Stop' : 'Record'}
@@ -126,12 +128,14 @@ export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, fr
           <button
             type="button"
             className={frozen ? 'freeze-button is-frozen' : 'freeze-button'}
-            title={frozen ? 'Return to the live, scrolling view' : 'Freeze the current view for inspection (capture continues)'}
-            disabled={freezePending || (!frozen && capture.status !== 'running')}
-            onClick={onFreezeToggle}
+            title={frozen
+              ? (capture.status === 'running' ? 'Return to the live, scrolling view' : 'Recording stopped; press Record to capture again')
+              : 'Pause the current view for inspection (capture continues)'}
+            disabled={pausePending || capture.status !== 'running'}
+            onClick={onPauseToggle}
           >
             <span className="freeze-icon" aria-hidden="true" />
-            {frozen ? 'Resume' : 'Freeze'}
+            {frozen ? (capture.status === 'running' ? 'Resume' : 'Paused') : 'Pause'}
           </button>
           <div className="meters" aria-label="Digital input levels">
             <div className="level-row">

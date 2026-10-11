@@ -15,16 +15,15 @@
   scales to the loudest sample in the visible window, capped at 100× and never
   zooming into signals below -60 dBFS. The y-axis labels show the fitted scale;
   the dBFS input meter remains the un-scaled level reference.
-- Freeze/Resume keeps capture running while the view stops scrolling; hovering
+- Pause/Resume keeps capture running while the view stops scrolling; hovering
   the frozen plots shows a time + frequency + approximate dB readout on the
   spectrogram and a time + min/max amplitude readout on the waveform.
-- Frozen zoom/pan: scroll zooms around the cursor and dragging pans within the
+- Paused zoom/pan: scroll zooms around the cursor and dragging pans within the
   copied raw-audio snapshot; the view is re-analyzed from that snapshot, not the
-  original rendered raster.
+  original rendered raster. The same snapshot remains inspectable after Stop.
 
 Exports, saved preferences, alternate palettes, pitch, and formants remain
-future work. Stop preserves the last live rendered data, not a frozen audio
-snapshot.
+future work.
 
 ## Signal-processing contract
 
@@ -113,10 +112,11 @@ After syncing the milestone, run `npm ci` (new FFT dependency), then
    5 kHz upper limit, the frequency-detail preset, and the optional RMS overlay.
 5. Switch to 20 ms/5 ms visible history to see waveform cycles. Both panels
    keep the same displayed time interval.
-6. Press **Freeze** while singing. Confirm the plots stop scrolling, capture
+6. Press **Pause** while singing. Confirm the plots stop scrolling, capture
    remains live, and hovering each plot shows a numeric readout. Scroll to zoom
    around the cursor and drag to pan within the retained history; both plots
-   stay aligned. Press **Resume** to return to the scrolling view.
+   stay aligned. Press **Resume** to return to the scrolling view. Stop also
+   leaves this snapshot available for inspection.
 7. Press **Stop**. Verify capture releases, plots stop, and the last view stays
    visible. Record again; previous history must clear rather than joining
    unrelated sessions.

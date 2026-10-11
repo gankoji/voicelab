@@ -153,7 +153,9 @@ export function VisualizationPanel({ controller, settings, frozen, onFrozenRange
     setWaveInspect({ px, xf: plotWidth > 0 ? clamp01((px - PLOT_LEFT) / plotWidth) : 0 });
   };
 
-  const stateLabel = frozen ? 'Frozen · capture continues' : status === 'running' ? 'Live' : retained ? 'Stopped · last view' : 'Ready';
+  const stateLabel = frozen
+    ? (status === 'running' ? 'Paused · capture continues' : 'Paused · recording stopped')
+    : status === 'running' ? 'Live' : retained ? 'Stopped · last view' : 'Ready';
   const spectrumReading = frozenFrameRef.current && spectrumInspect
     ? inspectSpectrum(frozenFrameRef.current, spectrumInspect.xf, spectrumInspect.yf) : null;
   const waveReading = frozenFrameRef.current && waveInspect
@@ -164,7 +166,7 @@ export function VisualizationPanel({ controller, settings, frozen, onFrozenRange
       <section className="panel spectrum-panel" aria-labelledby="spectrogram-heading">
         <div className="panel-heading">
           <h2 id="spectrogram-heading">Spectrogram</h2>
-          <span>{frozen ? 'Frozen — scroll to zoom, drag to pan' : `${stateLabel} · frequency in Hz`}</span>
+          <span>{frozen ? 'Paused — scroll to zoom, drag to pan' : `${stateLabel} · frequency in Hz`}</span>
         </div>
         <div className="canvas-frame">
           <canvas

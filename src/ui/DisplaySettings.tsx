@@ -14,20 +14,21 @@ export function DisplaySettings({ controller, settings, onChange, frozen }: {
   const sampleRate = controller.getSnapshot().details?.sampleRate ?? retained?.sampleRate ?? 48000;
   const displayed = normalizeView(settings, sampleRate);
   const update = (patch: Partial<ViewSettings>) => onChange({ ...settings, ...patch });
-  // Settings are editable whenever capture is not mid-request. While stopped, the
-  // frozen view is left as captured and changes apply the next time the user records.
+  // Settings are editable whenever capture is not mid-request. While paused,
+  // the snapshot is inspectable; changing visible history resets the zoomed
+  // window and changing analysis detail re-analyzes the snapshot.
   const controlsDisabled = status === 'requesting';
-  const stoppedWithView = status === 'stopped' && retained !== null;
+  const stoppedWithView = status === 'stopped' && retained !== null && !frozen;
 
   return (
     <section className="view-controls" aria-labelledby="display-settings-heading">
       <h3 id="display-settings-heading">Display</h3>
       {stoppedWithView && <p className="capture-note">The stopped view stays as captured. New settings apply the next time you record.</p>}
-      {frozen && <p className="capture-note">While frozen, drag or scroll on the plots to zoom and pan; visible history and analysis detail are fixed in the snapshot.</p>}
+      {frozen && <p className="capture-note">While paused, drag or scroll on the plots to zoom and pan. Changing visible history resets the zoomed window; changing analysis detail re-analyzes the snapshot.</p>}
       <fieldset disabled={controlsDisabled}>
         <legend className="visually-hidden">Live plot controls</legend>
         <label>Visible history
-          <select value={settings.historySeconds} disabled={frozen} onChange={(e) => update({ historySeconds: Number(e.target.value) })}>
+          <select value={settings.historySeconds} onChange={(e) => update({ historySeconds: Number(e.target.value) })}>
             <option value={0.005}>5 ms · sample detail</option>
             <option value={0.02}>20 ms · waveform detail</option>
             <option value={0.1}>100 ms</option>
@@ -54,7 +55,7 @@ export function DisplaySettings({ controller, settings, onChange, frozen }: {
           </select>
         </label>
         <label>Analysis detail
-          <select value={settings.fftSize} disabled={frozen} onChange={(e) => update({ fftSize: Number(e.target.value) })}>
+          <select value={settings.fftSize} onChange={(e) => update({ fftSize: Number(e.target.value) })}>
             <option value={1024}>Timing · 1024 samples</option>
             <option value={2048}>Balanced · 2048 samples</option>
             <option value={4096}>Frequency · 4096 samples</option>

@@ -47,11 +47,11 @@ Evidence and manual steps: [visualization validation](visualization-validation.m
 
 INS-01–02, EXP-01–02, SET-01, ACC-01.
 
-- [x] Freeze a stable snapshot while capture continues, and resume to live.
+- [x] Pause a stable snapshot while capture continues, and resume to live.
 - [x] Pointer cursor inspection: time + frequency + approximate dB on the
       spectrogram, time + min/max amplitude on the waveform.
 - [x] Zoom/pan an immutable retained-history snapshot (scroll to zoom, drag to
-      pan), re-analyzed from copied raw audio.
+      pan), re-analyzed from copied raw audio; also retained after recording stops.
 - [ ] WAV, plot image, and settings export from an explicit interval.
 - [ ] Preference persistence, keyboard navigation, numeric readouts, color options.
 

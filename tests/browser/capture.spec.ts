@@ -167,19 +167,19 @@ test('draws the known tone in aligned plots, changes scales, and shows sample de
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
-  // Settings stay editable while stopped, preparing the next recording.
+  // Stopping leaves a paused snapshot; settings stay editable for the next pass.
   await expect(page.getByLabel('Visible history')).toBeEnabled();
   await expect(page.getByLabel('Audio input')).toBeEnabled();
   await page.getByLabel('Visible history').selectOption('10');
-  await expect(page.getByText(/settings apply the next time you record/i)).toBeVisible();
+  await expect(page.getByText(/While paused, drag or scroll/i)).toBeVisible();
   await page.getByRole('button', { name: 'Close settings' }).click();
-  await expect(page.getByText(/Stopped · last view · linear amplitude/)).toBeVisible();
+  await expect(page.getByText(/Paused · recording stopped · linear amplitude/)).toBeVisible();
   expect(errors).toEqual([]);
 });
 
-test('freezes the view for inspection without stopping capture, then resumes', async ({ page }) => {
+test('pauses the view for inspection without stopping capture, then resumes', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('button', { name: 'Freeze' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Pause' })).toBeDisabled();
   await page.getByRole('button', { name: 'Record', exact: true }).click();
   await expect(page.getByRole('status', { name: 'Capture status' })).toHaveText('Live · mic on');
 
@@ -187,9 +187,9 @@ test('freezes the view for inspection without stopping capture, then resumes', a
   const wave = page.getByRole('img', { name: /^Live waveform/ });
   await expect.poll(async () => Number(await spectrum.getAttribute('data-end-sample'))).toBeGreaterThan(60000);
 
-  await page.getByRole('button', { name: 'Freeze' }).click();
+  await page.getByRole('button', { name: 'Pause' }).click();
   await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
-  // Capture keeps running while the display is frozen.
+  // Capture keeps running while the display is paused.
   await expect(page.getByRole('status', { name: 'Capture status' })).toHaveText('Live · mic on');
 
   await spectrum.hover();
@@ -203,19 +203,19 @@ test('freezes the view for inspection without stopping capture, then resumes', a
   expect(await page.getByLabel('Waveform inspection').innerText()).toMatch(/amp|no data/);
 
   await page.getByRole('button', { name: 'Resume' }).click();
-  await expect(page.getByRole('button', { name: 'Freeze' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
   await expect(page.getByLabel('Spectrogram inspection')).toBeHidden();
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
 });
 
-test('zooms and pans a frozen snapshot without stopping capture', async ({ page }) => {
+test('zooms and pans a paused snapshot without stopping capture', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Record', exact: true }).click();
   await expect(page.getByRole('status', { name: 'Capture status' })).toHaveText('Live · mic on');
   const spectrum = page.getByRole('img', { name: /^Live spectrogram/ });
   await expect.poll(async () => Number(await spectrum.getAttribute('data-end-sample'))).toBeGreaterThan(60000);
 
-  await page.getByRole('button', { name: 'Freeze' }).click();
+  await page.getByRole('button', { name: 'Pause' }).click();
   await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
   await expect.poll(async () => Number(await spectrum.getAttribute('data-end-sample'))).toBeGreaterThan(0);
   const originalEnd = Number(await spectrum.getAttribute('data-end-sample'));
@@ -237,6 +237,25 @@ test('zooms and pans a frozen snapshot without stopping capture', async ({ page 
 
   await expect(page.getByRole('status', { name: 'Capture status' })).toHaveText('Live · mic on');
   await page.getByRole('button', { name: 'Resume' }).click();
-  await expect(page.getByRole('button', { name: 'Freeze' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
+});
+
+test('stopping recording leaves a zoomable, pannable snapshot', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Record', exact: true }).click();
+  await expect(page.getByRole('status', { name: 'Capture status' })).toHaveText('Live · mic on');
+  const spectrum = page.getByRole('img', { name: /^Live spectrogram/ });
+  await expect.poll(async () => Number(await spectrum.getAttribute('data-end-sample'))).toBeGreaterThan(60000);
+
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
+  await expect(page.getByRole('status', { name: 'Capture status' })).toHaveText('Stopped');
+  await expect(page.getByRole('button', { name: 'Paused' })).toBeDisabled();
+
+  // The snapshot remains, so zoom/pan still work after the microphone is released.
+  await expect.poll(async () => Number(await spectrum.getAttribute('data-end-sample'))).toBeGreaterThan(0);
+  const originalEnd = Number(await spectrum.getAttribute('data-end-sample'));
+  await spectrum.hover();
+  await page.mouse.wheel(0, -240);
+  await expect.poll(async () => Number(await spectrum.getAttribute('data-end-sample'))).toBeLessThan(originalEnd);
 });
