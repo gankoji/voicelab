@@ -71,6 +71,13 @@ export function DisplaySettings({ controller, settings, onChange, frozen }: {
             {[-30, -15, 0].map((value) => <option key={value} value={value}>{value}</option>)}
           </select>
         </label>
+        <label>Color palette
+          <select value={settings.palette} onChange={(e) => update({ palette: e.target.value as ViewSettings['palette'] })}>
+            <option value="viridis">Viridis · colorblind-friendly</option>
+            <option value="magma">Magma · dark to bright</option>
+            <option value="grayscale">Grayscale</option>
+          </select>
+        </label>
         <label className="checkbox-control">
           <input type="checkbox" checked={settings.showRms} onChange={(e) => update({ showRms: e.target.checked })} />
           Show RMS amplitude

@@ -27,8 +27,7 @@
 
 Saved display settings and the chosen input device persist in localStorage and
 are restored on reload, without re-enabling capture or storing audio/consent.
-Alternate color palettes, keyboard-only inspection, pitch, and formants remain
-future work.
+Pitch and formants (Phase 2) remain future work.
 
 ## Signal-processing contract
 

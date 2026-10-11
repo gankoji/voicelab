@@ -1,6 +1,6 @@
 import { frequencyFraction } from '../analysis/view';
 import type { PlotFrame, ViewSettings } from '../analysis/view';
-import { PALETTE } from './palette';
+import { PALETTES } from './palette';
 import { computeWaveformScale } from './scale';
 
 export const PLOT_LEFT = 54;
@@ -55,6 +55,7 @@ export class PlotRenderer {
     const wave = prepare(waveform);
     if (!spectral || !wave) return;
     const settings = frame?.settings ?? fallback;
+    const palette = PALETTES[settings.palette];
     const waveScale = frame
       ? computeWaveformScale(frame, frame.settings.autoWaveformGain)
       : { gain: 1, maxAmplitude: 1 };
@@ -70,9 +71,9 @@ export class PlotRenderer {
       for (let i = 0; i < frame.spectrum.length; i++) {
         const color = frame.spectrum[i]! * 4;
         const offset = i * 4;
-        this.image.data[offset] = PALETTE[color]!;
-        this.image.data[offset + 1] = PALETTE[color + 1]!;
-        this.image.data[offset + 2] = PALETTE[color + 2]!;
+        this.image.data[offset] = palette.colors[color]!;
+        this.image.data[offset + 1] = palette.colors[color + 1]!;
+        this.image.data[offset + 2] = palette.colors[color + 2]!;
         this.image.data[offset + 3] = 255;
       }
       rasterContext.putImageData(this.image, 0, 0);
@@ -114,6 +115,7 @@ export class PlotRenderer {
       canvas.dataset.historySeconds = String(settings.historySeconds);
       canvas.dataset.fftSize = String(settings.fftSize);
       canvas.dataset.frequencyScale = settings.frequencyScale;
+      canvas.dataset.palette = settings.palette;
       canvas.dataset.traceSamples = String(frame?.trace.length ?? 0);
     }
   }

@@ -5,7 +5,7 @@ import { normalizeView } from '../analysis/view';
 import type { PlotFrame, ViewSettings } from '../analysis/view';
 import { clampFrozenRange } from '../analysis/frozen-analysis';
 import type { FrozenView } from './App';
-import { LEGEND_GRADIENT } from '../visualization/palette';
+import { PALETTES } from '../visualization/palette';
 import { PLOT_LEFT, PLOT_RIGHT, PLOT_TOP, PLOT_BOTTOM, PlotRenderer } from '../visualization/plots';
 import { inspectSpectrum, inspectWaveform } from '../visualization/inspection';
 
@@ -18,7 +18,7 @@ interface SpectrumPointer { px: number; py: number; xf: number; yf: number; }
 interface WavePointer { px: number; xf: number; }
 
 function settingsKey(settings: ViewSettings) {
-  return `${settings.historySeconds}|${settings.minFrequency}|${settings.maxFrequency}|${settings.frequencyScale}|${settings.fftSize}|${settings.floorDb}|${settings.ceilingDb}|${settings.showRms}|${settings.autoWaveformGain}`;
+  return `${settings.historySeconds}|${settings.minFrequency}|${settings.maxFrequency}|${settings.frequencyScale}|${settings.fftSize}|${settings.floorDb}|${settings.ceilingDb}|${settings.showRms}|${settings.autoWaveformGain}|${settings.palette}`;
 }
 
 export function VisualizationPanel({ controller, settings, frozen, onFrozenRangeChange, spectralCanvas, waveCanvas }: {
@@ -45,6 +45,38 @@ export function VisualizationPanel({ controller, settings, frozen, onFrozenRange
   const panRef = useRef<{ px: number; start: number; end: number } | null>(null);
   const [spectrumInspect, setSpectrumInspect] = useState<SpectrumPointer | null>(null);
   const [waveInspect, setWaveInspect] = useState<WavePointer | null>(null);
+
+  const applyZoom = (fraction: number, factor: number) => {
+    const current = frozenRef.current;
+    if (!current) return;
+    const span = current.end - current.start;
+    const anchor = current.start + fraction * span;
+    const minDuration = Math.max(64, Math.round(current.analysis.sampleRate * 0.002));
+    const newSpan = Math.max(minDuration, Math.min(current.analysis.displayEnd, span * factor));
+    const clamped = clampFrozenRange(current.analysis, anchor - fraction * newSpan, anchor + (1 - fraction) * newSpan);
+    rangeChangeRef.current(clamped.start, clamped.end);
+  };
+
+  const applyPan = (deltaSamples: number) => {
+    const current = frozenRef.current;
+    if (!current) return;
+    const clamped = clampFrozenRange(current.analysis, current.start + deltaSamples, current.end + deltaSamples);
+    rangeChangeRef.current(clamped.start, clamped.end);
+  };
+
+  const resetToHistory = () => {
+    const current = frozenRef.current;
+    if (!current) return;
+    const end = current.analysis.displayEnd;
+    rangeChangeRef.current(Math.max(0, end - settings.historySeconds * current.analysis.sampleRate), end);
+  };
+
+  const jumpToLatest = () => {
+    const current = frozenRef.current;
+    if (!current) return;
+    const span = current.end - current.start;
+    rangeChangeRef.current(current.analysis.displayEnd - span, current.analysis.displayEnd);
+  };
 
   // Live or frozen rendering. Frozen re-renders only when the range, settings, or size change.
   useEffect(() => {
@@ -89,18 +121,11 @@ export function VisualizationPanel({ controller, settings, frozen, onFrozenRange
     const canvas = spectralCanvas.current!;
     const onWheel = (event: WheelEvent) => {
       event.preventDefault();
-      const current = frozenRef.current;
-      if (!current) return;
+      if (!frozenRef.current) return;
       const rect = canvas.getBoundingClientRect();
       const plotWidth = rect.width - PLOT_LEFT - PLOT_RIGHT;
       const fraction = plotWidth > 0 ? clamp01((event.clientX - rect.left - PLOT_LEFT) / plotWidth) : 0.5;
-      const span = current.end - current.start;
-      const anchor = current.start + fraction * span;
-      const factor = Math.exp(event.deltaY * 0.0022);
-      const minDuration = Math.max(64, Math.round(current.analysis.sampleRate * 0.002));
-      const newSpan = Math.max(minDuration, Math.min(current.analysis.displayEnd, span * factor));
-      const clamped = clampFrozenRange(current.analysis, anchor - fraction * newSpan, anchor + (1 - fraction) * newSpan);
-      rangeChangeRef.current(clamped.start, clamped.end);
+      applyZoom(fraction, Math.exp(event.deltaY * 0.0022));
     };
     canvas.addEventListener('wheel', onWheel, { passive: false });
     return () => canvas.removeEventListener('wheel', onWheel);
@@ -128,6 +153,57 @@ export function VisualizationPanel({ controller, settings, frozen, onFrozenRange
   };
 
   const endPan = () => { panRef.current = null; };
+
+  const moveKeyCrosshair = (horizontal: number, vertical: number, plotWidth: number, plotHeight: number) => {
+    const step = 0.02;
+    const current = spectrumInspect ?? { px: PLOT_LEFT + plotWidth / 2, py: PLOT_TOP + plotHeight / 2, xf: 0.5, yf: 0.5 };
+    const xf = clamp01(current.xf + horizontal * step);
+    const yf = clamp01(current.yf + vertical * step);
+    setSpectrumInspect({ xf, yf, px: PLOT_LEFT + xf * plotWidth, py: PLOT_TOP + yf * plotHeight });
+  };
+
+  const onSpectrumKeyDown = (event: React.KeyboardEvent<HTMLCanvasElement>) => {
+    if (!frozenRef.current) return;
+    const current = frozenRef.current;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const plotWidth = rect.width - PLOT_LEFT - PLOT_RIGHT;
+    const plotHeight = rect.height - PLOT_TOP - PLOT_BOTTOM;
+    switch (event.key) {
+      case 'ArrowLeft':
+      case 'ArrowRight': {
+        const direction = event.key === 'ArrowLeft' ? -1 : 1;
+        if (event.shiftKey) applyPan(direction * (current.end - current.start) * 0.1);
+        else moveKeyCrosshair(direction, 0, plotWidth, plotHeight);
+        event.preventDefault();
+        break;
+      }
+      case 'ArrowUp':
+      case 'ArrowDown':
+        moveKeyCrosshair(0, event.key === 'ArrowUp' ? -1 : 1, plotWidth, plotHeight);
+        event.preventDefault();
+        break;
+      case '+':
+      case '=':
+        applyZoom(0.5, 0.75);
+        event.preventDefault();
+        break;
+      case '-':
+      case '_':
+        applyZoom(0.5, 1.25);
+        event.preventDefault();
+        break;
+      case 'Home':
+        resetToHistory();
+        event.preventDefault();
+        break;
+      case 'End':
+        jumpToLatest();
+        event.preventDefault();
+        break;
+      default:
+        break;
+    }
+  };
 
   const onSpectrumPointerMove = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     if (panRef.current) { movePan(event); return; }
@@ -173,13 +249,15 @@ export function VisualizationPanel({ controller, settings, frozen, onFrozenRange
             ref={spectralCanvas}
             className="spectrum-canvas"
             role="img"
-            aria-label="Live spectrogram: frequency against time, color indicates spectral amplitude"
+            tabIndex={frozen ? 0 : -1}
+            aria-label="Live spectrogram: frequency against time, color indicates spectral amplitude. When paused, use arrow keys to move the cursor, Shift+arrows to pan, and + or - to zoom."
             onPointerDown={frozen ? beginPan : undefined}
             onPointerMove={frozen ? onSpectrumPointerMove : undefined}
             onPointerUp={frozen ? endPan : undefined}
             onPointerCancel={frozen ? endPan : undefined}
             onLostPointerCapture={frozen ? endPan : undefined}
             onPointerLeave={frozen ? () => { endPan(); setSpectrumInspect(null); } : undefined}
+            onKeyDown={frozen ? onSpectrumKeyDown : undefined}
           >
             Spectrogram visualization. Digital peak and RMS levels are available numerically above.
           </canvas>
@@ -187,7 +265,7 @@ export function VisualizationPanel({ controller, settings, frozen, onFrozenRange
             <>
               <span className="cursor-x" style={{ left: `${spectrumInspect.px}px` }} aria-hidden="true" />
               <span className="cursor-y" style={{ top: `${spectrumInspect.py}px` }} aria-hidden="true" />
-              <output className="inspect-readout spectrum-readout" aria-label="Spectrogram inspection">
+              <output className="inspect-readout spectrum-readout" aria-label="Spectrogram inspection" aria-live="polite">
                 {spectrumReading
                   ? `${timeLabel(spectrumReading.timeSeconds)} · ${spectrumReading.frequency.toFixed(1)} Hz · ${spectrumReading.levelDb === null ? 'no data' : `≈${spectrumReading.levelDb.toFixed(0)} dBFS`}`
                   : 'no data'}
@@ -197,7 +275,7 @@ export function VisualizationPanel({ controller, settings, frozen, onFrozenRange
         </div>
         <div className="color-legend" aria-label={`Spectral amplitude color scale: ${displayed.floorDb} to ${displayed.ceilingDb} dBFS`}>
           <span>{displayed.floorDb} dBFS</span>
-          <span className="color-ramp" style={{ background: LEGEND_GRADIENT }} />
+          <span className="color-ramp" style={{ background: PALETTES[displayed.palette].legendGradient }} />
           <span>{displayed.ceilingDb} dBFS</span>
         </div>
       </section>

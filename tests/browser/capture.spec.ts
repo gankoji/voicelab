@@ -320,3 +320,32 @@ test('persists display preferences across reload without restarting capture', as
   await expect(page.getByLabel('Frequency scale')).toHaveValue('log');
   await expect(page.getByLabel('Show RMS amplitude')).toBeChecked();
 });
+
+test('supports color palettes and keyboard navigation while paused', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Record', exact: true }).click();
+  await expect(page.getByRole('status', { name: 'Capture status' })).toHaveText('Live · mic on');
+  const spectrum = page.getByRole('img', { name: /^Live spectrogram/ });
+  await expect.poll(async () => Number(await spectrum.getAttribute('data-end-sample'))).toBeGreaterThan(60000);
+
+  await page.getByRole('button', { name: 'Pause' }).click();
+  await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByLabel('Color palette').selectOption('magma');
+  await expect(spectrum).toHaveAttribute('data-palette', 'magma');
+  await page.getByRole('button', { name: 'Close settings' }).click();
+
+  const originalEnd = Number(await spectrum.getAttribute('data-end-sample'));
+  await spectrum.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByLabel('Spectrogram inspection')).toBeVisible();
+  await page.keyboard.press('+');
+  await expect.poll(async () => Number(await spectrum.getAttribute('data-end-sample'))).toBeLessThan(originalEnd);
+  const zoomedEnd = Number(await spectrum.getAttribute('data-end-sample'));
+  await page.keyboard.press('Shift+ArrowRight');
+  await expect.poll(async () => Number(await spectrum.getAttribute('data-end-sample'))).not.toBe(zoomedEnd);
+
+  await page.getByRole('button', { name: 'Resume' }).click();
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
+});

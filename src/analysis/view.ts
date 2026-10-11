@@ -3,6 +3,9 @@ export const MAX_PLOT_WIDTH = 1024;
 export const SPECTRUM_ROWS = 192;
 export const FFT_SIZES = [1024, 2048, 4096] as const;
 
+export const PALETTE_NAMES = ['viridis', 'magma', 'grayscale'] as const;
+export type PaletteName = (typeof PALETTE_NAMES)[number];
+
 export interface ViewSettings {
   historySeconds: number;
   minFrequency: number;
@@ -13,12 +16,13 @@ export interface ViewSettings {
   ceilingDb: number;
   showRms: boolean;
   autoWaveformGain: boolean;
+  palette: PaletteName;
 }
 
 export const DEFAULT_VIEW: ViewSettings = {
   historySeconds: 10, minFrequency: 50, maxFrequency: 10000,
   frequencyScale: 'linear', fftSize: 2048, floorDb: -90, ceilingDb: 0, showRms: false,
-  autoWaveformGain: true,
+  autoWaveformGain: true, palette: 'viridis',
 };
 
 function clamp(value: number, min: number, max: number, fallback: number) {
@@ -38,6 +42,7 @@ export function normalizeView(settings: ViewSettings, sampleRate: number): ViewS
     ceilingDb,
     showRms: Boolean(settings.showRms),
     autoWaveformGain: Boolean(settings.autoWaveformGain),
+    palette: PALETTE_NAMES.some((name) => name === settings.palette) ? settings.palette : 'viridis',
   };
 }
 
