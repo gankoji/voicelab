@@ -55,6 +55,23 @@ describe('export metadata', () => {
       startSample: 4800, endSample: 14400, startSeconds: 0.1, endSeconds: 0.3, durationSeconds: 0.2,
     });
     expect(metadata.settings).toEqual(DEFAULT_VIEW);
+    expect(metadata.pitch).toEqual([]);
     expect(metadata.format).toMatchObject({ encoding: 'PCM16', channels: 1, byteOrder: 'little-endian' });
+  });
+
+  it('records pitch points with snapshot-relative time', () => {
+    const metadata = buildMetadata({
+      app: 'voice-lab', version: '0.1.0', exportedAt: '2025-01-01T00:00:00.000Z',
+      sampleRate: 48000, startSample: 0, endSample: 9600, sampleCount: 9600,
+      settings: DEFAULT_VIEW,
+      pitch: [
+        { sampleIndex: 2400, f0Hz: 220, confidence: 0.9, voiced: true },
+        { sampleIndex: 4800, f0Hz: 0, confidence: 0, voiced: false },
+      ],
+    });
+    expect(metadata.pitch).toEqual([
+      { timeSeconds: 0.05, f0Hz: 220, confidence: 0.9, voiced: true },
+      { timeSeconds: 0.1, f0Hz: 0, confidence: 0, voiced: false },
+    ]);
   });
 });

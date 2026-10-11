@@ -1,4 +1,5 @@
 import type { ViewSettings } from '../analysis/view';
+import type { PitchPoint } from '../analysis/pitch';
 
 const WAV_BYTES_PER_SAMPLE = 2;
 const WAV_CHANNELS = 1;
@@ -50,6 +51,7 @@ export interface ExportMetadata {
   };
   sampleCount: number;
   settings: ViewSettings;
+  pitch: Array<{ timeSeconds: number; f0Hz: number; confidence: number; voiced: boolean }>;
   format: { encoding: 'PCM16'; channels: 1; bytesPerSample: 2; byteOrder: 'little-endian' };
 }
 
@@ -62,6 +64,7 @@ export function buildMetadata(input: {
   endSample: number;
   sampleCount: number;
   settings: ViewSettings;
+  pitch?: PitchPoint[];
 }): ExportMetadata {
   const { sampleRate, startSample, endSample } = input;
   return {
@@ -78,6 +81,12 @@ export function buildMetadata(input: {
     },
     sampleCount: input.sampleCount,
     settings: input.settings,
+    pitch: (input.pitch ?? []).map((point) => ({
+      timeSeconds: point.sampleIndex / sampleRate,
+      f0Hz: point.f0Hz,
+      confidence: point.confidence,
+      voiced: point.voiced,
+    })),
     format: { encoding: 'PCM16', channels: 1, bytesPerSample: 2, byteOrder: 'little-endian' },
   };
 }

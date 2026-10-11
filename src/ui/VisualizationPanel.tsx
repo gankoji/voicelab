@@ -96,7 +96,7 @@ export function VisualizationPanel({ controller, settings, frozen, onFrozenRange
         const sig = `${fz.start}:${fz.end}:${size}:${settingsKey(settings)}`;
         if (sig !== previousFrozenSig) {
           const frame = fz.analysis.renderRange(fz.start, fz.end, settings, width);
-          renderer.draw(spectrum, wave, frame, normalizeView(settings, sampleRate));
+          renderer.draw(spectrum, wave, frame, normalizeView(settings, sampleRate), fz.analysis.pitchRange(fz.start, fz.end));
           frozenFrameRef.current = frame;
           previousFrozenSig = sig;
         }
@@ -238,8 +238,10 @@ export function VisualizationPanel({ controller, settings, frozen, onFrozenRange
   const waveReading = frozenFrameRef.current && waveInspect
     ? inspectWaveform(frozenFrameRef.current, waveInspect.xf) : null;
 
-  const livePitch = !frozen && status === 'running' ? controller.getPitch() : [];
-  const latestVoiced = livePitch.length ? [...livePitch].reverse().find((point) => point.voiced) : undefined;
+  const pitchPoints = frozen
+    ? frozen.analysis.pitchRange(frozen.start, frozen.end)
+    : status === 'running' ? controller.getPitch() : [];
+  const latestVoiced = pitchPoints.length ? [...pitchPoints].reverse().find((point) => point.voiced) : undefined;
   const pitchReading = latestVoiced ? describePitch(latestVoiced.f0Hz, settings.a4Hz) : null;
 
   return (
@@ -249,7 +251,7 @@ export function VisualizationPanel({ controller, settings, frozen, onFrozenRange
           <h2 id="spectrogram-heading">Spectrogram</h2>
           <span className="heading-meta">
             <span>{frozen ? 'Paused — scroll to zoom, drag to pan' : `${stateLabel} · frequency in Hz`}</span>
-            {!frozen && pitchReading && (
+            {pitchReading && (
               <output className="pitch-readout" aria-label="Current pitch">
                 {pitchReading.note} {pitchReading.cents >= 0 ? '↑' : '↓'}{Math.abs(pitchReading.cents).toFixed(0)}¢ · {pitchReading.f0Hz.toFixed(1)} Hz
               </output>

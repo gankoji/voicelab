@@ -66,7 +66,7 @@ interface Session {
   awaitingMeter: boolean;
   awaitingView: boolean;
   lastViewRequest: number;
-  pendingSnapshotResolve?: (snapshot: { samples: Float32Array<ArrayBuffer>; sampleRate: number; endSample: number }) => void;
+  pendingSnapshotResolve?: (snapshot: { samples: Float32Array<ArrayBuffer>; sampleRate: number; endSample: number; pitch: PitchPoint[] }) => void;
   lastProgress: number;
 }
 
@@ -127,7 +127,7 @@ export class CaptureController {
   }
 
   /** Copies the retained audio out of the live worker for an immutable frozen view. */
-  requestSnapshot(): Promise<{ samples: Float32Array<ArrayBuffer>; sampleRate: number; endSample: number }> {
+  requestSnapshot(): Promise<{ samples: Float32Array<ArrayBuffer>; sampleRate: number; endSample: number; pitch: PitchPoint[] }> {
     const session = this.session;
     if (!session?.worker || this.state.status !== 'running') return Promise.reject(new Error('Capture is not running.'));
     return new Promise((resolve, reject) => {
@@ -290,7 +290,7 @@ export class CaptureController {
           } else if (data.type === 'snapshot') {
             if (data.sessionId !== session.id) return;
             session.pendingSnapshotResolve?.({
-              samples: data.samples, sampleRate: data.sampleRate, endSample: data.endSample,
+              samples: data.samples, sampleRate: data.sampleRate, endSample: data.endSample, pitch: data.pitch,
             });
             session.pendingSnapshotResolve = undefined;
           }

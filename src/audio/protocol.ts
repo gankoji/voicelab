@@ -57,4 +57,4 @@ export type WorkerReply =
   | { type: 'ready'; sessionId: number }
   | { type: 'meter'; sessionId: number; reading: MeterReading | null }
   | { type: 'view'; sessionId: number; frame: PlotFrame; pitch: PitchPoint[] }
-  | { type: 'snapshot'; sessionId: number; samples: Float32Array<ArrayBuffer>; sampleRate: number; endSample: number };
+  | { type: 'snapshot'; sessionId: number; samples: Float32Array<ArrayBuffer>; sampleRate: number; endSample: number; pitch: PitchPoint[] };

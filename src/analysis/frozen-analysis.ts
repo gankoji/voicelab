@@ -3,6 +3,7 @@ import { SpectralHistory } from '../buffers/spectral-history';
 import { Stft } from './stft';
 import { MAX_PLOT_WIDTH, SPECTRUM_ROWS, normalizeView } from './view';
 import type { PlotFrame, ViewSettings } from './view';
+import type { PitchPoint } from './pitch';
 
 /**
  * Re-analysis of an immutable raw-audio snapshot, used while the live view is
@@ -13,12 +14,14 @@ export class FrozenAnalysis {
   readonly sampleRate: number;
   private readonly snapshot: Float32Array;
   private readonly audio: AudioHistory;
+  private readonly pitch: PitchPoint[];
   private stft: Stft;
   private spectra: SpectralHistory;
 
-  constructor(sampleRate: number, samples: Float32Array, initialFftSize: number) {
+  constructor(sampleRate: number, samples: Float32Array, initialFftSize: number, pitch: PitchPoint[] = []) {
     this.sampleRate = sampleRate;
     this.snapshot = samples;
+    this.pitch = pitch;
     this.audio = new AudioHistory(samples.length);
     this.audio.append(samples, 0);
     this.spectra = this.createSpectra(initialFftSize);
@@ -36,6 +39,11 @@ export class FrozenAnalysis {
     const e = Math.min(this.snapshot.length, Math.round(end));
     if (e <= s) return new Float32Array(0);
     return this.snapshot.slice(s, e);
+  }
+
+  /** Pitch points (snapshot-local sample index) within `[start, end)`, oldest first. */
+  pitchRange(start: number, end: number): PitchPoint[] {
+    return this.pitch.filter((point) => point.sampleIndex >= start && point.sampleIndex < end);
   }
 
   /** Rightmost sample whose analysis window is complete (aligned with the live view). */

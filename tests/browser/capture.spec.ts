@@ -268,6 +268,11 @@ test('tracks the known tone and shows its note plus a pitch overlay', async ({ p
   });
   expect(cyan).toBeGreaterThan(100);
 
+  // Pausing keeps the pitch track and readout available on the snapshot.
+  await page.getByRole('button', { name: 'Pause' }).click();
+  await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
+  await expect(pitch).toContainText('A4');
+
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
 });
 
@@ -324,6 +329,7 @@ test('exports the paused interval as WAV, PNG, and metadata', async ({ page }) =
   expect(metadata.sampleRate).toBe(48000);
   expect(metadata.range.durationSeconds).toBeGreaterThan(0);
   expect(metadata.settings).toBeTruthy();
+  expect(metadata.pitch.length).toBeGreaterThan(0);
 
   await page.getByRole('button', { name: 'Resume' }).click();
   await page.getByRole('button', { name: 'Stop', exact: true }).click();

@@ -49,6 +49,15 @@ describe('frozen re-analysis', () => {
     expect(slice[0]).toBeCloseTo(0.25 * Math.sin(2 * Math.PI * 440 * 480 / sampleRate), 4);
     expect(analysis.slice(100, 100)).toHaveLength(0);
   });
+
+  it('serves snapshot-local pitch points for a range', () => {
+    const analysis = new FrozenAnalysis(sampleRate, samples, 2048, [
+      { sampleIndex: 100, f0Hz: 200, confidence: 0.9, voiced: true },
+      { sampleIndex: 500, f0Hz: 0, confidence: 0, voiced: false },
+    ]);
+    expect(analysis.pitchRange(0, 400).map((point) => point.sampleIndex)).toEqual([100]);
+    expect(analysis.pitchRange(0, 1000)).toHaveLength(2);
+  });
 });
 
 describe('frozen range clamping', () => {

@@ -51,8 +51,12 @@ scope.onmessage = ({ data }) => {
     ]);
   } else if (data.type === 'snapshot' && data.sessionId === sessionId && analysis) {
     const samples = analysis.audio.retainedSamples();
+    const offset = Math.max(0, analysis.audio.endSample - analysis.audio.capacity);
+    const pitch = (pitchHistory?.range(offset, analysis.audio.endSample) ?? [])
+      .map((point) => ({ ...point, sampleIndex: point.sampleIndex - offset }));
     scope.postMessage({
-      type: 'snapshot', sessionId, samples, sampleRate: analysis.sampleRate, endSample: analysis.audio.endSample,
+      type: 'snapshot', sessionId, samples, sampleRate: analysis.sampleRate,
+      endSample: analysis.audio.endSample, pitch,
     }, [samples.buffer]);
   }
 };
