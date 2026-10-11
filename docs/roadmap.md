@@ -10,7 +10,7 @@ are required Phase 2 capabilities, not optional backlog ideas.
 - [x] TypeScript/React/Vite starter with explicit development placeholders.
 - [x] Unit, build/typecheck, and browser smoke-test configuration.
 
-## Phase 1A — capture proof of concept, implemented for manual validation
+## Phase 1A — capture proof of concept, baseline confirmed
 
 CAP-01–05, PRIV-01.
 
@@ -19,25 +19,29 @@ CAP-01–05, PRIV-01.
 - [x] Worklet batching and bounded worker transport; input peak/RMS/clipping meter.
 - [x] Lifecycle tests, including stop during a pending permission request.
 - [x] Synthetic-microphone Chromium tests against both built app and dev server.
-- [ ] Physical microphone/permission walkthrough on the singer's machine.
+- [x] Project owner ran the capture milestone and confirmed its behavior.
 - [ ] Establish reference hardware; certify other browsers and real mobile devices.
 
 Exit: real microphone levels work without speaker feedback, capture resources
 are released reliably, and input discontinuities are recorded.
 Current evidence and manual steps: [capture validation](capture-validation.md).
 
-## Phase 1B — analysis vertical slice
+## Phase 1B — analysis vertical slice, implemented for manual validation
 
 VIS-01–05, BUF-01, PERF-01–02.
 
-- Select and test FFT implementation and normalization.
-- Synthetic tone → worker → spectrogram and waveform.
-- Add microphone input using the same pipeline.
-- Shared sample-based timeline, min/max waveform summaries, optional RMS.
-- Bounded history, visible gaps, usable timing/detail presets.
+- [x] Select and test FFT implementation and normalization.
+- [x] Synthetic tone → worker → spectrogram and waveform.
+- [x] Add microphone input using the same pipeline.
+- [x] Shared sample-based timeline, min/max waveform summaries, optional RMS.
+- [x] Bounded history, visible gaps, usable timing/detail presets.
+- [x] Real canvas checks for tone placement, RMS, time alignment, and fine zoom.
+- [x] Accelerated 30-minute DSP/history check (not a real-time browser soak).
+- [ ] Singer walkthrough of vowel, slide, volume changes, and waveform detail.
 
 Exit: synthetic tests validate coordinates/levels; a real sustained vowel,
 pitch slide, and volume change produce correctly synchronized views.
+Evidence and manual steps: [visualization validation](visualization-validation.md).
 
 ## Phase 1C — usable live workflow
 

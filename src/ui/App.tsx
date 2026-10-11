@@ -1,6 +1,10 @@
+import { useState } from 'react';
+import { CaptureController } from '../audio/capture-controller';
 import { MicrophonePanel } from './MicrophonePanel';
+import { VisualizationPanel } from './VisualizationPanel';
 
 export function App() {
+  const [controller] = useState(() => new CaptureController());
   return (
     <main className="app">
       <header className="intro">
@@ -13,42 +17,15 @@ export function App() {
       </header>
 
       <aside className="status" aria-label="Development status">
-        <span className="badge">Capture milestone</span>
+        <span className="badge">Live visualization milestone</span>
         <p>
-          Live microphone levels are ready to try.
-          Spectrograms, waveforms, freezing, and exports are still in development.
+          Sing or speak to explore your spectrum and waveform.
+          Freezing, inspection, and exports are still in development.
         </p>
       </aside>
 
-      <MicrophonePanel />
-
-      <section className="workspace" aria-label="Planned visualization workspace">
-        <section className="panel" aria-labelledby="spectrogram-heading">
-          <div className="panel-heading">
-            <h2 id="spectrogram-heading">Spectrogram</h2>
-            <span>Planned · Phase 1</span>
-          </div>
-          <div className="plot-placeholder">
-            <p>See the frequencies in your voice unfold over time.</p>
-            <p className="plot-detail">
-              Frequency × time · color shows spectral level
-            </p>
-          </div>
-        </section>
-
-        <section className="panel" aria-labelledby="waveform-heading">
-          <div className="panel-heading">
-            <h2 id="waveform-heading">Waveform</h2>
-            <span>Planned · Phase 1</span>
-          </div>
-          <div className="plot-placeholder waveform-placeholder">
-            <p>Inspect individual wave cycles, or zoom out for the whole phrase.</p>
-            <p className="plot-detail">
-              Amplitude × time · optional RMS level · synchronized with the spectrogram
-            </p>
-          </div>
-        </section>
-      </section>
+      <MicrophonePanel controller={controller} />
+      <VisualizationPanel controller={controller} />
 
       <section className="next-phase" aria-labelledby="tracking-heading">
         <div>

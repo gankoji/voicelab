@@ -57,21 +57,21 @@ h2 { font-size: 1.15rem; }
 
 .panel-heading span { font-size: 0.8rem; color: #526970; }
 
-.plot-placeholder {
-  min-height: 220px;
-  padding: 32px 24px;
-  background: #102b33;
-  color: #e7f3ee;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  gap: 10px;
-}
-
-.plot-detail { font-size: 0.85rem; color: #adcbc4; }
-.waveform-placeholder { min-height: 150px; }
+.spectrum-canvas, .waveform-canvas { display: block; width: 100%; background: #0a1820; }
+.spectrum-canvas { height: 300px; }
+.waveform-canvas { height: 180px; }
+.view-controls { padding: 20px 24px; }
+.view-controls summary { cursor: pointer; font-weight: 700; }
+.view-controls[open] summary { margin-bottom: 12px; }
+.view-controls fieldset { border: 0; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 20px; }
+.view-controls label { font-size: 0.85rem; font-weight: 600; min-width: 0; }
+.view-controls select { display: block; margin-top: 4px; font-weight: 400; font-size: 0.9rem; }
+.checkbox-control { display: flex; align-items: center; gap: 8px; }
+.checkbox-control input { width: 20px; height: 20px; }
+.color-legend { display: flex; align-items: center; gap: 12px; padding: 12px 24px 0; font-size: 0.8rem; white-space: nowrap; }
+.color-ramp { height: 12px; flex: 1; border-radius: 3px; }
+.plot-caption { color: #526970; font-size: 0.8rem; padding: 12px 24px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .next-phase { margin: 28px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .next-phase .eyebrow { margin-bottom: 4px; }
 .next-phase > p { color: #486169; }
@@ -111,4 +111,7 @@ button:hover { background: #102b33; }
   .capture-controls button { width: 100%; }
   .meters { padding: 12px; }
   .level-row { grid-template-columns: 2.5rem minmax(0, 1fr) 6rem; gap: 4px; }
+  .view-controls { padding: 16px; }
+  .view-controls fieldset { grid-template-columns: minmax(0, 1fr); }
+  .plot-caption { padding: 12px 16px; }
 }

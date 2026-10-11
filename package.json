@@ -16,9 +16,11 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:dev": "playwright test --config playwright.dev.config.ts",
+    "benchmark:analysis": "node scripts/benchmark-analysis.mjs",
     "check": "npm run test && npm run build"
   },
   "dependencies": {
+    "fft.js": "^4.0.4",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },

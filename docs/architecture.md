@@ -1,8 +1,8 @@
 # Architecture
 
-Status: capture and peak/RMS measurement implemented; spectral analysis, retained
-history, visualization, snapshots, and tracking below remain implementation
-design. See [capture validation](capture-validation.md) for the current boundary.
+Status: capture, levels, STFT, bounded history, and live plots implemented.
+Snapshots, exports, and tracking below remain implementation design. See
+[visualization validation](visualization-validation.md) for the current boundary.
 
 ## Decisions
 
@@ -13,8 +13,8 @@ design. See [capture validation](capture-validation.md) for the current boundary
 | Capture | `getUserMedia` → Web Audio → AudioWorklet. Request mono and disabled processing; inspect what the browser actually reports. |
 | Analysis | Dedicated Web Worker, separate from rendering. AudioWorklet only batches samples; no FFT, allocation-heavy tracking, or UI work in the real-time callback. |
 | Transport | Bounded transferable-buffer batches first. SharedArrayBuffer would reduce copying but requires cross-origin isolation; introduce only if measurement justifies deployment complexity. |
-| Drawing | Canvas 2D, incrementally updated spectrogram and multiresolution waveform. WebGL adds complexity; use it only if profiling shows Canvas is insufficient. |
-| Dependencies | Select an FFT implementation during the DSP milestone after license, normalization, correctness, and performance review. Evaluate trackers rather than committing to a library now. |
+| Drawing | Canvas 2D with bounded worker-generated rasters and exact waveform summaries. A full viewport redraw keeps scale changes and gaps straightforward; measured DSP raster cost is acceptable for this milestone. Incremental caches/WebGL remain profiling-driven optimizations. |
+| Dependencies | fft.js 4.0.4 (MIT), real-input FFT with reusable scratch arrays; normalization, endpoints, tones, harmonics, sweep, and impulse tested. Prefer this small existing implementation to a custom FFT or WASM overhead. Trackers remain undecided. |
 | Deployment | Static hosting over HTTPS, no backend. Localhost is suitable for desktop development; HTTP over a LAN is not a secure microphone context. |
 
 ## Proposed module boundaries
@@ -52,15 +52,28 @@ clock. A sample at index `n` has relative time `n / sampleRate`. Window-center
 timestamps expose intrinsic analysis latency; they do not eliminate it.
 New sessions/device changes cannot silently reuse a previous sample rate.
 
+Request a 48 kHz AudioContext independently of input/output hardware rates.
+During browser testing the system default was 192 kHz, coarsening the fixed
+2048-point preset's bin spacing to 93.75 Hz and increasing history cost fourfold.
+48 kHz covers the app's vocal range while keeping preset durations and memory
+predictable. Web Audio resampling is permitted and disclosed; all timing and
+labels still derive from the context's actual reported rate.
+
+Both plots use the same view ending at `capturedEnd - fftSize / 2`, so the
+waveform is delayed equally with the centered STFT. The horizontal labels are
+relative to that displayed end, not wall-clock “now.” Gaps and incomplete windows
+stay blank. A preset change restarts spectral history but retains waveform audio.
+
 Do not connect captured microphone samples to speakers. Use a silent processing
 path if the browser requires an active destination to keep a worklet running.
 Verify that behavior in every supported browser.
 
 ## Bounded resources and ownership
 
-The capture milestone uses four 2048-sample Float32 buffers (32 KiB total) on
-a direct worklet/worker MessagePort. Block duration is about 42.7 ms at 48 kHz
-or 46.4 ms at 44.1 kHz; it is not an end-to-end latency guarantee. The clock
+The live pipeline uses eight 1024-sample Float32 buffers (32 KiB total) on
+a direct worklet/worker MessagePort. Block duration is about 21.3 ms at 48 kHz;
+the smaller batches support more frequent visual updates without enlarging the
+queue. This is not an end-to-end latency guarantee. The clock
 origin is the first input processed, not node construction. Missing sample
 intervals after that origin are reported, including discarded partial blocks.
 
@@ -82,9 +95,18 @@ Transfer ownership explicitly, recycle completed buffers, and reject stale
 session messages. If the consumer cannot keep up, record the missing sample
 range and mark a discontinuity; do not let MessagePort queues grow forever.
 
-A default 30-second mono Float32 buffer at 48 kHz is about 5.76 MB. Spectrogram
-columns, waveform summaries, frozen copies, and export buffers require their
-own explicit bounds. Store only needed history, not every result since startup.
+A 30-second mono Float32 history at 48 kHz is about 5.76 MB, plus a small
+fixed margin for the delayed viewport/centered RMS. Tagged 128-sample summaries
+provide exact min/max and sum-of-squares queries without scanning entire history.
+The spectral ring retains `ceil(30 * fs / hop) + 2` frames. Default retained
+audio, summaries, and spectrum total 17,638,040 bytes, independent of session
+duration. FFT scratch arrays and render-transfer buffers are separately bounded.
+
+The renderer requests at most one unacknowledged view, throttled to roughly
+30/s, independently of 10 Hz meters. Transfers are capped at a 1024 × 192
+indexed-color raster plus width-bounded waveform/RMS arrays and fine-zoom
+samples. React owns controls and status, not the plot buffers. Both canvases
+draw from the same returned frame, using a shared horizontal geometry.
 
 Waveforms use min/max summaries at overview scales, not point subsampling.
 At fine zoom, draw actual samples. Frozen high-detail spectrogram inspection
@@ -96,7 +118,11 @@ actually used for that view.
 - Capture: idle → requesting → running → stopped, or an error/interruption.
 - View: live or a frozen immutable snapshot, with a selected time range.
 
-Freezing copies a bounded, coherent snapshot (audio, analysis, settings, sample
+Current stop behavior retains only the last render data and destroys the worker's
+rolling history. Display settings are disabled for that stopped view; starting
+clears it. Freeze/inspection/export are not yet implemented.
+
+The planned freeze operation copies a bounded, coherent snapshot (audio, analysis, settings, sample
 range) that cannot be overwritten by continued capture. Keep microphone status
 visible. Stopping capture releases tracks/nodes and leaves the snapshot
 available until explicitly discarded or the page is closed.
@@ -111,10 +137,17 @@ when browser policy requires it, with missing time marked.
 
 ### Spectrogram and level
 
-For the upcoming spectrogram, use a documented STFT window, FFT normalization, hop size, and spectral
-magnitude/power reference. Distinguish spectral bin level from time-domain
-peak/RMS dBFS. Floors are display decisions, not nonzero measured silence.
-Changing intensity or color does not change audio.
+Use a periodic Hann window and 75% overlap. Presets are N=1024/2048/4096 with
+hop=N/4. After a real-input FFT, bins are `20*log10(2*|X[k]|/sum(window))`,
+except DC/Nyquist, which are not doubled. This is a single-sided
+peak-amplitude spectrum, not PSD: a bin-centered full-scale sine is 0 dBFS.
+Silence is -Infinity; color floors do not create measured energy.
+Default fixed color range is -90 to 0 dBFS. Display max-reduction preserves
+short/narrow peaks when multiple frames/bins share a pixel.
+
+The optional waveform RMS uses a centered 20 ms window on the same linear
+amplitude axis, not a dB axis. Missing samples invalidate affected summaries;
+neither RMS nor STFT bridges gaps. Color and scale changes never modify audio.
 
 Window duration and bin spacing depend on actual sample rate: `N / fs` seconds
 and `fs / N` Hz. Zero-padding can interpolate the displayed spectrum but does
@@ -168,7 +201,7 @@ static directory.
 
 ## Open decisions and release gates
 
-- FFT dependency, normalization, window/hop presets, and display floor.
+- Further performance/accessibility validation and alternate color palettes.
 - Reference devices and supported browser versions, measured end-to-end latency.
 - Pitch range, acceptable errors, confidence thresholds, and smoothing.
 - Formant estimator validity ranges and rejection rules.

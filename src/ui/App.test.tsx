@@ -2,8 +2,8 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { App } from './App';
 
-describe('capture application', () => {
-  it('distinguishes working capture from the upcoming plots', () => {
+describe('live visualization application', () => {
+  it('distinguishes the working plots from upcoming inspection and exports', () => {
     render(<App />);
 
     expect(screen.getByRole('heading', { name: 'Voice Lab' })).toBeInTheDocument();
@@ -12,11 +12,13 @@ describe('capture application', () => {
     expect(screen.getByText(/Microphone inactive/)).toBeInTheDocument();
   });
 
-  it('names both planned views and the required second-phase tracking', () => {
+  it('exposes plot controls and the required second-phase tracking', () => {
     render(<App />);
 
     expect(screen.getByRole('heading', { name: 'Spectrogram' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Waveform' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Visible history')).toHaveValue('10');
+    expect(screen.getByLabelText('Show RMS amplitude')).not.toBeChecked();
     expect(screen.getByText('Required · Phase 2')).toBeInTheDocument();
     expect(screen.getByText(/F0 frequency.*F1–F3/)).toBeInTheDocument();
   });

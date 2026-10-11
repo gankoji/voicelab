@@ -1,6 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
-import { CaptureController } from '../audio/capture-controller';
-import type { CaptureStatus } from '../audio/capture-controller';
+import type { CaptureController, CaptureStatus } from '../audio/capture-controller';
 
 const statusLabels: Record<CaptureStatus, string> = {
   idle: 'Microphone off',
@@ -20,8 +19,7 @@ function processingLabel(value: boolean | string | undefined) {
   return value === undefined ? 'Unknown' : value ? 'On' : 'Off';
 }
 
-export function MicrophonePanel() {
-  const [controller] = useState(() => new CaptureController());
+export function MicrophonePanel({ controller }: { controller: CaptureController }) {
   const capture = useSyncExternalStore(controller.subscribe, controller.getSnapshot);
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [deviceId, setDeviceId] = useState('');

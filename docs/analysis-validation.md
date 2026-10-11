@@ -1,9 +1,10 @@
 # Analysis validation plan
 
 Status: future DSP acceptance plan, not a report of current accuracy.
-Current tests cover capture lifecycle, bounded sample transport, digital
-peak/RMS, and browser capture workflows; see [capture validation](capture-validation.md).
-Spectral/tracking tolerances must be set before those features are accepted.
+Current tests cover capture lifecycle, bounded transport/history, digital
+peak/RMS, normalized STFT, and browser-rendered plots; see
+[visualization validation](visualization-validation.md). Pitch/formant tolerances
+must be set before those features are accepted.
 
 ## Reproducible fixtures
 

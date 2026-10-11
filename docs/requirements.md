@@ -1,8 +1,9 @@
 # Requirements
 
-Status: agreed product direction; capture/level-meter milestone implemented.
-See [capture validation](capture-validation.md) for verified behavior and limits;
-the remaining visualization and tracking requirements are not implemented yet.
+Status: capture/level meters and live visualization implemented.
+See [capture validation](capture-validation.md) and
+[visualization validation](visualization-validation.md) for evidence and limits.
+Freeze/inspection, export, and tracking requirements remain unimplemented.
 Requirement IDs are stable references for issues, code reviews, and tests.
 “Phase 2” means required for the application, not an optional enhancement.
 
@@ -46,9 +47,9 @@ The app is educational, not diagnostic.
 - Fixed default intensity scale with perceptually ordered, accessible colors.
 - Linear waveform amplitude; input peak/RMS meter in dBFS.
 
-FFT/hop sizes, amplitude floors, clipping thresholds, and spectral normalization
-must be selected and documented during the analysis milestone. They are not
-validated by this requirements document.
+Implemented defaults and their test evidence are documented in the
+[visualization validation](visualization-validation.md) record. This requirements
+document alone is not an accuracy or compatibility guarantee.
 
 ## Phase 2: required tracking
 

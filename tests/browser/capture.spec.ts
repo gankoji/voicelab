@@ -101,3 +101,63 @@ test('releases the microphone on pagehide and never restarts automatically', asy
   await expect(page.getByText(/Microphone inactive/)).toBeVisible();
   expect(await page.evaluate(() => (window as unknown as { capturedTracks: MediaStreamTrack[] }).capturedTracks.length)).toBe(0);
 });
+
+test('draws the known tone in aligned plots, changes scales, and shows sample detail', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/');
+  await page.getByText('Display settings', { exact: true }).click();
+  await page.getByLabel('Visible history').selectOption('1');
+  await page.getByLabel('Highest frequency (Hz)').selectOption('2000');
+  await page.getByLabel('Show RMS amplitude').check();
+  await page.getByRole('button', { name: 'Start microphone' }).click();
+  const spectrum = page.getByRole('img', { name: /^Live spectrogram/ });
+  const wave = page.getByRole('img', { name: /^Live waveform/ });
+  await expect.poll(async () => Number(await spectrum.getAttribute('data-end-sample'))).toBeGreaterThan(60000);
+
+  const measured = await spectrum.evaluate((element) => {
+    const canvas = element as HTMLCanvasElement;
+    const ratio = canvas.width / canvas.clientWidth;
+    const ctx = canvas.getContext('2d')!;
+    const top = Math.round(12 * ratio);
+    const height = Math.round((canvas.clientHeight - 42) * ratio);
+    const x = Math.round((54 + (canvas.clientWidth - 66) * 0.65) * ratio);
+    const pixels = ctx.getImageData(x, top, 1, height).data;
+    let peakY = 0;
+    let peak = -1;
+    for (let y = 0; y < height; y++) {
+      const intensity = pixels[y * 4]! + pixels[y * 4 + 1]! + pixels[y * 4 + 2]!;
+      if (intensity > peak) { peak = intensity; peakY = y; }
+    }
+    return { frequency: 2000 - peakY / height * (2000 - 50), peak };
+  });
+  expect(Math.abs(measured.frequency - 440)).toBeLessThan(50);
+  expect(measured.peak).toBeGreaterThan(300);
+  expect(await page.evaluate(() => {
+    const canvases = [...document.querySelectorAll('canvas')];
+    return canvases[0]?.dataset.endSample === canvases[1]?.dataset.endSample;
+  })).toBe(true);
+  expect(await wave.evaluate((element) => {
+    const canvas = element as HTMLCanvasElement;
+    const pixels = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
+    let yellow = 0;
+    for (let i = 0; i < pixels.length; i += 4) {
+      if (pixels[i]! > 220 && pixels[i + 1]! > 150 && pixels[i + 2]! < 150) yellow++;
+    }
+    return yellow;
+  })).toBeGreaterThan(10);
+
+  await page.getByLabel('Frequency scale').selectOption('log');
+  await expect(spectrum).toHaveAttribute('data-frequency-scale', 'log');
+  await page.getByLabel('Analysis detail').selectOption('4096');
+  await expect(spectrum).toHaveAttribute('data-fft-size', '4096');
+  await page.getByLabel('Visible history').selectOption('0.005');
+  await expect.poll(async () => Number(await wave.getAttribute('data-trace-samples'))).toBeGreaterThan(100);
+  await expect(wave).toHaveAttribute('data-history-seconds', '0.005');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+  await page.getByRole('button', { name: 'Stop microphone' }).click();
+  await expect(page.getByLabel('Visible history')).toBeDisabled();
+  await expect(page.getByText('Stopped · last view · linear amplitude')).toBeVisible();
+  expect(errors).toEqual([]);
+});

@@ -1,6 +1,8 @@
-/** Four reusable blocks bound the audio queue to ~171 ms at 48 kHz. */
-export const BLOCK_SIZE = 2048;
-export const BUFFER_COUNT = 4;
+import type { PlotFrame, ViewSettings } from '../analysis/view';
+
+/** Eight reusable blocks bound the audio queue to ~171 ms at 48 kHz. */
+export const BLOCK_SIZE = 1024;
+export const BUFFER_COUNT = 8;
 export const METER_INTERVAL_MS = 100;
 
 export interface SampleBlock {
@@ -28,6 +30,13 @@ export interface MeterRequest {
   sessionId: number;
 }
 
+export interface ViewRequest {
+  type: 'read-view';
+  sessionId: number;
+  settings: ViewSettings;
+  width: number;
+}
+
 export interface MeterReading {
   /** Levels across samples received since the previous read, not smoothed dB. */
   peakDbfs: number;
@@ -40,4 +49,5 @@ export interface MeterReading {
 
 export type WorkerReply =
   | { type: 'ready'; sessionId: number }
-  | { type: 'meter'; sessionId: number; reading: MeterReading | null };
+  | { type: 'meter'; sessionId: number; reading: MeterReading | null }
+  | { type: 'view'; sessionId: number; frame: PlotFrame };

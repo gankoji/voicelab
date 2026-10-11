@@ -1,5 +1,11 @@
 # Capture milestone validation
 
+This records the capture baseline, which the project owner has now run and
+confirmed. The subsequent [visualization milestone](visualization-validation.md)
+adds history/plots, requests 48 kHz analysis, and uses eight 1024-sample blocks
+instead of four 2048-sample blocks (same total pool size). The statements below
+about unimplemented plots/no history describe that earlier baseline.
+
 ## Implemented
 
 Explicit microphone start/stop, input enumeration/selection, permission/error

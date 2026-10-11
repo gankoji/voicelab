@@ -1,6 +1,7 @@
 import workletUrl from './capture.worklet?worker&url';
 import { METER_INTERVAL_MS } from './protocol';
-import type { MeterReading, MeterRequest, PipelineInit, WorkerReply } from './protocol';
+import type { MeterReading, MeterRequest, PipelineInit, ViewRequest, WorkerReply } from './protocol';
+import type { PlotFrame, ViewSettings } from '../analysis/view';
 
 export type CaptureStatus = 'idle' | 'requesting' | 'running' | 'stopped' | 'error';
 
@@ -36,7 +37,9 @@ const browserEnvironment: CaptureEnvironment = {
     return null;
   },
   getUserMedia: (constraints) => navigator.mediaDevices.getUserMedia(constraints),
-  createContext: () => new AudioContext({ latencyHint: 'interactive' }),
+  // A fixed analysis rate keeps vocal FFT presets consistent across 44.1–192 kHz hardware.
+  // Web Audio resamples the input if necessary; reported input and analysis rates stay distinct.
+  createContext: () => new AudioContext({ latencyHint: 'interactive', sampleRate: 48000 }),
   createWorklet: (context) => new AudioWorkletNode(context, 'voice-lab-capture', {
     numberOfInputs: 1,
     numberOfOutputs: 1,
@@ -45,7 +48,7 @@ const browserEnvironment: CaptureEnvironment = {
     channelCountMode: 'explicit',
     channelInterpretation: 'speakers',
   }),
-  createWorker: () => new Worker(new URL('../analysis/meter.worker.ts', import.meta.url), { type: 'module' }),
+  createWorker: () => new Worker(new URL('../analysis/analysis.worker.ts', import.meta.url), { type: 'module' }),
   createChannel: () => new MessageChannel(),
 };
 
@@ -60,6 +63,8 @@ interface Session {
   cancelReady?: () => void;
   cleanups: (() => void)[];
   awaitingMeter: boolean;
+  awaitingView: boolean;
+  lastViewRequest: number;
   lastProgress: number;
 }
 
@@ -95,10 +100,25 @@ export class CaptureController {
   private listeners = new Set<() => void>();
   private session: Session | undefined;
   private nextId = 0;
+  private view: PlotFrame | null = null;
 
   constructor(private readonly environment: CaptureEnvironment = browserEnvironment) {}
 
   getSnapshot = () => this.state;
+
+  /** High-frequency plot data stays outside React state. Both canvases read one frame. */
+  getView = () => this.view;
+
+  requestView(settings: ViewSettings, width: number) {
+    const session = this.session;
+    const now = performance.now();
+    if (!session?.worker || this.state.status !== 'running' || session.awaitingView
+      || now - session.lastViewRequest < 33) return;
+    session.awaitingView = true;
+    session.lastViewRequest = now;
+    const request: ViewRequest = { type: 'read-view', sessionId: session.id, settings, width };
+    session.worker.postMessage(request);
+  }
 
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);
@@ -141,8 +161,10 @@ export class CaptureController {
 
   async start(deviceId = ''): Promise<void> {
     this.stop();
+    this.view = null;
     const session: Session = {
       id: ++this.nextId, cleanups: [], awaitingMeter: false, lastProgress: performance.now(),
+      awaitingView: false, lastViewRequest: -Infinity,
     };
     this.session = session;
     this.update({
@@ -234,6 +256,9 @@ export class CaptureController {
               session.lastProgress = performance.now();
               this.update({ ...this.state, reading: data.reading });
             }
+          } else if (data.type === 'view') {
+            session.awaitingView = false;
+            if (this.state.status === 'running') this.view = data.frame;
           }
         };
         const workerInit: PipelineInit = {

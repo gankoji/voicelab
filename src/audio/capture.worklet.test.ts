@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { BLOCK_SIZE } from './protocol';
 import type { PipelineInit, SampleBlock } from './protocol';
 
 describe('capture processor', () => {
@@ -25,21 +26,21 @@ describe('capture processor', () => {
     processor.port.onmessage({ data: {
       type: 'init', sessionId: 7, sampleRate: 48000, port: port as unknown as MessagePort,
     } });
-    const output = new Float32Array(2048).fill(1);
+    const output = new Float32Array(BLOCK_SIZE).fill(1);
     processor.process([[]], [[output]]);
     expect(output.every((sample) => sample === 0)).toBe(true);
     expect(postMessage).not.toHaveBeenCalled();
 
     vi.stubGlobal('currentFrame', 4096);
-    processor.process([[new Float32Array(2048).fill(0.5)]], [[output.fill(1)]]);
+    processor.process([[new Float32Array(BLOCK_SIZE).fill(0.5)]], [[output.fill(1)]]);
     const first = postMessage.mock.calls[0]![0] as SampleBlock;
     expect(first.firstSample).toBe(0);
     expect(first.samples.every((sample) => sample === 0.5)).toBe(true);
     expect(output.every((sample) => sample === 0)).toBe(true);
 
     vi.stubGlobal('currentFrame', 8192);
-    processor.process([[new Float32Array(2048)]], [[output]]);
+    processor.process([[new Float32Array(BLOCK_SIZE)]], [[output]]);
     const next = postMessage.mock.calls[1]![0] as SampleBlock;
-    expect(next.firstSample).toBe(4096); // 2048 samples missing after the first block.
+    expect(next.firstSample).toBe(4096); // The missing interval is not silently joined.
   });
 });

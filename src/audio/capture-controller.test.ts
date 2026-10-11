@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CaptureController } from './capture-controller';
 import type { CaptureEnvironment } from './capture-controller';
 import type { MeterReading, PipelineInit, WorkerReply } from './protocol';
+import { DEFAULT_VIEW } from '../analysis/view';
+import { LiveAnalysis } from '../analysis/live-analysis';
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -243,5 +245,27 @@ describe('capture lifecycle', () => {
     await vi.advanceTimersByTimeAsync(2700);
     expect(h.controller.getSnapshot().message).toMatch(/No audio samples/);
     expect(h.track.stop).toHaveBeenCalledOnce();
+  });
+
+  it('bounds view requests, rejects stale frames, and keeps plot data out of state', async () => {
+    const h = harness();
+    const started = h.controller.start();
+    const sessionId = await h.ready();
+    await started;
+    h.controller.requestView(DEFAULT_VIEW, 500);
+    h.controller.requestView(DEFAULT_VIEW, 500);
+    expect(h.worker.postMessage.mock.calls.filter(([message]) => message.type === 'read-view')).toHaveLength(1);
+    const state = h.controller.getSnapshot();
+    const frame = new LiveAnalysis(48000).render(DEFAULT_VIEW, 500);
+    h.reply({ type: 'view', sessionId: sessionId - 1, frame });
+    expect(h.controller.getView()).toBeNull();
+    h.reply({ type: 'view', sessionId, frame });
+    expect(h.controller.getView()).toBe(frame);
+    expect(h.controller.getSnapshot()).toBe(state);
+    await vi.advanceTimersByTimeAsync(34);
+    h.controller.requestView(DEFAULT_VIEW, 500);
+    expect(h.worker.postMessage.mock.calls.filter(([message]) => message.type === 'read-view')).toHaveLength(2);
+    h.controller.stop();
+    expect(h.controller.getView()).toBe(frame);
   });
 });
