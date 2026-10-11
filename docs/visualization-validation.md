@@ -9,6 +9,8 @@
   when at least one horizontal display column is available per sample.
 - Optional centered 20 ms RMS, on the waveform's linear amplitude axis.
 - Bounded audio/spectral history and visible missing-data regions.
+- A zero-amplitude reference line plus a lightly tinted not-yet-captured region
+  on the waveform, so silence is distinct from the leading empty history.
 - Freeze/Resume keeps capture running while the view stops scrolling; hovering
   the frozen plots shows a time + frequency + approximate dB readout on the
   spectrogram and a time + min/max amplitude readout on the waveform.

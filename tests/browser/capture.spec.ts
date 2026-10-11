@@ -141,15 +141,20 @@ test('draws the known tone in aligned plots, changes scales, and shows sample de
     const canvases = [...document.querySelectorAll('canvas')];
     return canvases[0]?.dataset.endSample === canvases[1]?.dataset.endSample;
   })).toBe(true);
-  expect(await wave.evaluate((element) => {
+  const wavePixels = await wave.evaluate((element) => {
     const canvas = element as HTMLCanvasElement;
     const pixels = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
     let yellow = 0;
+    let teal = 0;
     for (let i = 0; i < pixels.length; i += 4) {
-      if (pixels[i]! > 220 && pixels[i + 1]! > 150 && pixels[i + 2]! < 150) yellow++;
+      const r = pixels[i]!, g = pixels[i + 1]!, b = pixels[i + 2]!;
+      if (r > 220 && g > 150 && b < 150) yellow++;
+      else if (r > 120 && r < 220 && g > 170 && b > 150) teal++;
     }
-    return yellow;
-  })).toBeGreaterThan(10);
+    return { yellow, teal };
+  });
+  expect(wavePixels.yellow).toBeGreaterThan(10);
+  expect(wavePixels.teal).toBeGreaterThan(50);
 
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await page.getByLabel('Frequency scale').selectOption('log');

@@ -109,6 +109,25 @@ export class PlotRenderer {
     context.beginPath();
     context.rect(PLOT_LEFT, PLOT_TOP, width, height);
     context.clip();
+
+    // A zero-amplitude reference makes a real silent input distinguishable from
+    // the not-yet-captured region, which is tinted instead of left to look flat.
+    context.strokeStyle = 'rgba(189, 208, 215, 0.28)';
+    context.lineWidth = 1;
+    context.beginPath();
+    context.moveTo(PLOT_LEFT, y(0));
+    context.lineTo(PLOT_LEFT + width, y(0));
+    context.stroke();
+    if (!frame.trace.length) {
+      context.fillStyle = 'rgba(255, 255, 255, 0.05)';
+      const columnWidth = width / frame.width;
+      for (let i = 0; i < frame.width; i++) {
+        if (!Number.isFinite(frame.minimum[i]!)) {
+          context.fillRect(PLOT_LEFT + columnWidth * i, PLOT_TOP, columnWidth + 1, height);
+        }
+      }
+    }
+
     context.strokeStyle = '#b4eadc';
     context.lineWidth = 1;
     context.beginPath();
