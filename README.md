@@ -39,23 +39,17 @@ visiting a plain HTTP LAN address is not equivalent to localhost.
 
 Open the app and press **Record** to begin live analysis. The spectrogram and
 waveform fill most of the window; a compact toolbar shows capture status and
-peak/RMS levels. Use **Settings** to choose an input or adjust the plots; use
-**Stop** to release the microphone. Selecting another input stops capture until
-you explicitly record again. Capture also stops when the page is hidden or left;
-it never resumes automatically.
+peak/RMS level readouts. Use **Settings** to choose an input or adjust the plots.
+**Pause** freezes the view for inspection while capture continues; **Stop**
+releases the microphone and keeps a snapshot you can still inspect. Selecting
+another input stops capture until you explicitly record again. Capture also
+stops when the page is hidden or left; it never resumes automatically.
 
-The plots share a scrolling time axis. In **Settings**, under Display, choose:
-
-- Visible history from 5 ms (sample detail on sufficiently wide screens) to 30 s.
-- Linear/log frequency scale and frequency limits.
-- Timing/balanced/frequency-detail analysis presets.
-- Fixed color floor and ceiling; optional centered 20 ms RMS on the waveform.
-
-Try a sustained vowel and a pitch slide. For a closer look at the waveform,
-choose 20 ms or 5 ms. Changing analysis detail restarts spectral history;
-display-only controls redraw the retained history. Stopping discards the
-rolling audio buffer but leaves the last view onscreen. This is not yet the
-freeze/inspection feature.
+While paused or stopped, scroll or drag on the spectrogram to zoom and pan, and
+hover (or use the arrow keys while the plot is focused) to read time, frequency,
+and amplitude. **Export** downloads the paused interval as a WAV file, a composite
+PNG of the two plots, and a JSON sidecar. Display settings and the chosen input
+persist in localStorage between sessions; audio and microphone consent never do.
 
 Analysis requests a 48 kHz AudioContext; Web Audio resamples inputs as needed.
 The details distinguish input and analysis rates. Both plots are delayed by
@@ -67,11 +61,14 @@ it cannot detect every instance of analog distortion. There is no speaker
 monitoring, so you should not hear delayed playback.
 
 ```sh
-npm run check          # Unit tests, strict TypeScript check, production build
+npm run check          # Unit tests, strict TypeScript check, production build, license audit
 npx playwright install chromium
 npm run test:e2e       # Built-app capture tests with a synthetic microphone
 npm run test:e2e:dev   # Same workflows against the Vite development server
+npx playwright install firefox webkit
+npm run test:browsers  # Firefox + WebKit loading/layout smoke (no microphone)
 npm run benchmark:analysis # Accelerated 30-minute DSP/retention check, not a live-browser soak
+npm run soak -- 600    # Real-browser liveness/heap probe for 600 seconds
 npm run preview       # Serve the production build locally
 ```
 
@@ -89,15 +86,19 @@ viewport tests are not proof of mobile hardware/browser support.
 - [Analysis validation plan](docs/analysis-validation.md)
 - [Capture validation and manual checklist](docs/capture-validation.md)
 - [Visualization semantics and validation](docs/visualization-validation.md)
+- [Release hardening and compatibility](docs/release-hardening.md)
+- [Deployment](docs/deployment.md)
 - [Contributing](CONTRIBUTING.md)
 
 The application uses TypeScript, React, Vite, Web Audio, an AudioWorklet,
 a dedicated analysis worker, fft.js, and Canvas 2D plots. There is no backend.
-Offline loading is planned, not implemented.
+Production builds register a service worker that caches application assets for
+offline loading; audio is never cached or uploaded.
 
 ## License
 
 [MIT](LICENSE). Voice Lab is an independent project; it does not include
 proprietary source code, branding, or assets from other voice-analysis products.
-The FFT dependency's license is preserved in
-[third-party notices](public/third-party-notices.txt), included in production builds.
+Runtime dependencies (React, scheduler, fft.js) are MIT; their attribution is
+preserved in [third-party notices](public/third-party-notices.txt), included in
+production builds.

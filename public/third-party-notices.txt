@@ -1,6 +1,11 @@
-fft.js 4.0.4 — https://github.com/indutny/fft.js
+Voice Lab bundles the following runtime packages, all under the MIT License.
+
+- React 19.3.0 — https://react.dev — Copyright (c) Meta Platforms, Inc. and affiliates.
+- React DOM 19.3.0 — https://react.dev — Copyright (c) Meta Platforms, Inc. and affiliates.
+- scheduler 0.28.0 — https://www.npmjs.com/package/scheduler — Copyright (c) Meta Platforms, Inc. and affiliates.
+- fft.js 4.0.4 — https://github.com/indutny/fft.js — Copyright Fedor Indutny, 2017.
+
 MIT License
-Copyright Fedor Indutny, 2017.
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the

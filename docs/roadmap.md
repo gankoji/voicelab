@@ -68,14 +68,20 @@ Current pause/inspection/export behavior is recorded in
 
 WEB-01–02, OFF-01, OSS-01, SAFE-01.
 
-- Actual Chromium/Firefox/Safari testing and published compatibility results.
-- 30-minute soak and overload tests, documented latency measurements.
-- Touch interactions and actual iOS Safari/Android Chrome validation.
-- Offline asset loading, safe cache updates, static-host deployment guide.
-- Dependency license review and privacy/network inspection.
+- [x] Chromium automation covers capture/plots/pause/export; Firefox and WebKit
+      desktop pass the loading and layout smoke (`npm run test:browsers`).
+- [x] Real-browser soak harness (`npm run soak -- <seconds>`) samples the JS heap
+      and verifies liveness/dropped samples; latency methodology documented.
+- [ ] Physical hardware: microphone capture in Firefox/Safari, touch on real
+      iOS Safari/Android Chrome, and an actual 30-minute/latency measurement.
+- [x] Production service worker caches application assets for offline loads;
+      static HTTPS deployment guide documented.
+- [x] Runtime dependency license audit (`npm run check:licenses`, all MIT) and an
+      automated privacy/network inspection.
 
 Desktop may ship before mobile certification. Label mobile experimental until
 it meets the same core workflow criteria; viewport emulation is insufficient.
+Evidence and procedures: [release hardening](release-hardening.md).
 
 ## Phase 2A — F0 and musical pitch
 

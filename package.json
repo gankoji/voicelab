@@ -16,8 +16,11 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:dev": "playwright test --config playwright.dev.config.ts",
+    "test:browsers": "playwright test --config playwright.browsers.config.ts",
     "benchmark:analysis": "node scripts/benchmark-analysis.mjs",
-    "check": "npm run test && npm run build"
+    "check:licenses": "node scripts/check-licenses.mjs",
+    "soak": "npm run build && node scripts/soak.mjs",
+    "check": "npm run test && npm run build && npm run check:licenses"
   },
   "dependencies": {
     "fft.js": "^4.0.4",
