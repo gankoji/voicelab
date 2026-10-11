@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import type { PointerEvent as ReactPointerEvent } from 'react';
+import type { MutableRefObject, PointerEvent as ReactPointerEvent } from 'react';
 import type { CaptureController } from '../audio/capture-controller';
 import { normalizeView } from '../analysis/view';
 import type { PlotFrame, ViewSettings } from '../analysis/view';
@@ -21,11 +21,13 @@ function settingsKey(settings: ViewSettings) {
   return `${settings.historySeconds}|${settings.minFrequency}|${settings.maxFrequency}|${settings.frequencyScale}|${settings.fftSize}|${settings.floorDb}|${settings.ceilingDb}|${settings.showRms}|${settings.autoWaveformGain}`;
 }
 
-export function VisualizationPanel({ controller, settings, frozen, onFrozenRangeChange }: {
+export function VisualizationPanel({ controller, settings, frozen, onFrozenRangeChange, spectralCanvas, waveCanvas }: {
   controller: CaptureController;
   settings: ViewSettings;
   frozen: FrozenView | null;
   onFrozenRangeChange: (start: number, end: number) => void;
+  spectralCanvas: MutableRefObject<HTMLCanvasElement | null>;
+  waveCanvas: MutableRefObject<HTMLCanvasElement | null>;
 }) {
   const status = useSyncExternalStore(controller.subscribe, () => controller.getSnapshot().status);
   const sampleRate = frozen?.analysis.sampleRate
@@ -35,8 +37,6 @@ export function VisualizationPanel({ controller, settings, frozen, onFrozenRange
   const displayed = frozen
     ? normalizeView(settings, sampleRate)
     : status !== 'running' && retained ? retained.settings : normalizeView(settings, sampleRate);
-  const spectralRef = useRef<HTMLCanvasElement>(null);
-  const waveRef = useRef<HTMLCanvasElement>(null);
   const frozenRef = useRef(frozen);
   frozenRef.current = frozen;
   const rangeChangeRef = useRef(onFrozenRangeChange);
@@ -48,8 +48,8 @@ export function VisualizationPanel({ controller, settings, frozen, onFrozenRange
 
   // Live or frozen rendering. Frozen re-renders only when the range, settings, or size change.
   useEffect(() => {
-    const spectrum = spectralRef.current!;
-    const wave = waveRef.current!;
+    const spectrum = spectralCanvas.current!;
+    const wave = waveCanvas.current!;
     const renderer = new PlotRenderer();
     let handle = 0;
     let previousFrame: PlotFrame | null | undefined;
@@ -86,7 +86,7 @@ export function VisualizationPanel({ controller, settings, frozen, onFrozenRange
   useEffect(() => {
     const fz = frozenRef.current;
     if (!fz) return;
-    const canvas = spectralRef.current!;
+    const canvas = spectralCanvas.current!;
     const onWheel = (event: WheelEvent) => {
       event.preventDefault();
       const current = frozenRef.current;
@@ -170,7 +170,7 @@ export function VisualizationPanel({ controller, settings, frozen, onFrozenRange
         </div>
         <div className="canvas-frame">
           <canvas
-            ref={spectralRef}
+            ref={spectralCanvas}
             className="spectrum-canvas"
             role="img"
             aria-label="Live spectrogram: frequency against time, color indicates spectral amplitude"
@@ -207,7 +207,7 @@ export function VisualizationPanel({ controller, settings, frozen, onFrozenRange
         </div>
         <div className="canvas-frame">
           <canvas
-            ref={waveRef}
+            ref={waveCanvas}
             className="waveform-canvas"
             role="img"
             aria-label="Live waveform: digital amplitude against time"

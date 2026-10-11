@@ -22,11 +22,10 @@
   copied raw-audio snapshot; the view is re-analyzed from that snapshot, not the
   original rendered raster. The same snapshot remains inspectable after Stop.
 - Export: a pause or stop leaves an explicit interval; Export downloads that
-  interval as 16-bit PCM WAV plus a companion JSON with time alignment, sample
-  rate, and the applied display/analysis settings.
+  interval as 16-bit PCM WAV, a composite PNG of the two plots, and a companion
+  JSON with time alignment, sample rate, and the applied display/analysis settings.
 
-Plot-image export, saved preferences, alternate palettes, pitch, and formants
-remain future work.
+Saved preferences, alternate palettes, pitch, and formants remain future work.
 
 ## Signal-processing contract
 

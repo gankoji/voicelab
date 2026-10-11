@@ -4,6 +4,7 @@ import { DEFAULT_VIEW } from '../analysis/view';
 import type { ViewSettings } from '../analysis/view';
 import { FrozenAnalysis } from '../analysis/frozen-analysis';
 import { buildMetadata, downloadBlob, encodeWav } from '../export/export';
+import { encodePlotPng } from '../export/image';
 import { APP_NAME, APP_VERSION } from '../app-meta';
 import { MicrophonePanel } from './MicrophonePanel';
 import { VisualizationPanel } from './VisualizationPanel';
@@ -23,6 +24,8 @@ export function App() {
   const [frozen, setFrozen] = useState<FrozenView | null>(null);
   const [pausePending, setPausePending] = useState(false);
   const pauseLock = useRef(false);
+  const spectralCanvas = useRef<HTMLCanvasElement | null>(null);
+  const waveCanvas = useRef<HTMLCanvasElement | null>(null);
 
   const captureSnapshot = async () => {
     const snapshot = await controller.requestSnapshot();
@@ -88,7 +91,7 @@ export function App() {
     void controller.start(deviceId);
   };
 
-  const exportSnapshot = () => {
+  const exportSnapshot = async () => {
     if (!frozen) return;
     const audio = frozen.analysis.slice(frozen.start, frozen.end);
     const wav = encodeWav(audio, frozen.analysis.sampleRate);
@@ -101,6 +104,14 @@ export function App() {
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
     downloadBlob(new Blob([wav], { type: 'audio/wav' }), `${APP_NAME}-${stamp}.wav`);
     downloadBlob(new Blob([JSON.stringify(metadata, null, 2)], { type: 'application/json' }), `${APP_NAME}-${stamp}.json`);
+    if (spectralCanvas.current && waveCanvas.current) {
+      try {
+        const png = await encodePlotPng(spectralCanvas.current, waveCanvas.current);
+        downloadBlob(png, `${APP_NAME}-${stamp}.png`);
+      } catch {
+        // Audio and metadata already downloaded; a plot-image failure should not block them.
+      }
+    }
   };
 
   const headerText = frozen
@@ -123,7 +134,7 @@ export function App() {
         onPauseToggle={() => void togglePause()}
         onStop={() => void stopRecording()}
         onRecord={startRecording}
-        onExport={exportSnapshot}
+        onExport={() => void exportSnapshot()}
       >
         <DisplaySettings controller={controller} settings={settings} onChange={handleSettingsChange} frozen={frozen !== null} />
       </MicrophonePanel>
@@ -133,6 +144,8 @@ export function App() {
         settings={settings}
         frozen={frozen}
         onFrozenRangeChange={updateFrozenRange}
+        spectralCanvas={spectralCanvas}
+        waveCanvas={waveCanvas}
       />
 
       <footer>

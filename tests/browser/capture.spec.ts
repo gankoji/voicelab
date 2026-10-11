@@ -262,7 +262,7 @@ test('stopping recording leaves a zoomable, pannable snapshot', async ({ page })
   await expect.poll(async () => Number(await spectrum.getAttribute('data-end-sample'))).toBeLessThan(originalEnd);
 });
 
-test('exports the paused interval as WAV and metadata', async ({ page }) => {
+test('exports the paused interval as WAV, PNG, and metadata', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Record', exact: true }).click();
   await expect(page.getByRole('status', { name: 'Capture status' })).toHaveText('Live · mic on');
@@ -275,11 +275,15 @@ test('exports the paused interval as WAV and metadata', async ({ page }) => {
   const downloads: Download[] = [];
   page.on('download', (download) => downloads.push(download));
   await page.getByRole('button', { name: 'Export' }).click();
-  await expect.poll(() => downloads.length).toBe(2);
+  await expect.poll(() => downloads.length).toBe(3);
 
   const wav = downloads.find((download) => download.suggestedFilename().endsWith('.wav'));
   const json = downloads.find((download) => download.suggestedFilename().endsWith('.json'));
-  if (!wav || !json) throw new Error('Expected both WAV and JSON downloads');
+  const png = downloads.find((download) => download.suggestedFilename().endsWith('.png'));
+  if (!wav || !json || !png) throw new Error('Expected WAV, JSON, and PNG downloads');
+
+  const pngBytes = await readFile(await png.path());
+  expect(Array.from(pngBytes.subarray(0, 8))).toEqual([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
   const wavBytes = await readFile(await wav.path());
   expect(wavBytes.subarray(0, 4).toString('ascii')).toBe('RIFF');
