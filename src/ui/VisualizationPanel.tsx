@@ -3,6 +3,8 @@ import type { PointerEvent as ReactPointerEvent } from 'react';
 import type { CaptureController } from '../audio/capture-controller';
 import { normalizeView } from '../analysis/view';
 import type { PlotFrame, ViewSettings } from '../analysis/view';
+import { clampFrozenRange } from '../analysis/frozen-analysis';
+import type { FrozenView } from './App';
 import { LEGEND_GRADIENT } from '../visualization/palette';
 import { PLOT_LEFT, PLOT_RIGHT, PLOT_TOP, PLOT_BOTTOM, PlotRenderer } from '../visualization/plots';
 import { inspectSpectrum, inspectWaveform } from '../visualization/inspection';
@@ -15,57 +17,121 @@ const timeLabel = (seconds: number) => Math.abs(seconds) < 1
 interface SpectrumPointer { px: number; py: number; xf: number; yf: number; }
 interface WavePointer { px: number; xf: number; }
 
-export function VisualizationPanel({ controller, settings, frozenFrame }: {
+function settingsKey(settings: ViewSettings) {
+  return `${settings.historySeconds}|${settings.minFrequency}|${settings.maxFrequency}|${settings.frequencyScale}|${settings.fftSize}|${settings.floorDb}|${settings.ceilingDb}|${settings.showRms}|${settings.autoWaveformGain}`;
+}
+
+export function VisualizationPanel({ controller, settings, frozen, onFrozenRangeChange }: {
   controller: CaptureController;
   settings: ViewSettings;
-  frozenFrame: PlotFrame | null;
+  frozen: FrozenView | null;
+  onFrozenRangeChange: (start: number, end: number) => void;
 }) {
   const status = useSyncExternalStore(controller.subscribe, () => controller.getSnapshot().status);
-  const sampleRate = frozenFrame?.sampleRate
+  const sampleRate = frozen?.analysis.sampleRate
     ?? controller.getSnapshot().details?.sampleRate
     ?? controller.getView()?.sampleRate ?? 48000;
   const retained = controller.getView();
-  const displayed = frozenFrame
-    ? frozenFrame.settings
+  const displayed = frozen
+    ? normalizeView(settings, sampleRate)
     : status !== 'running' && retained ? retained.settings : normalizeView(settings, sampleRate);
   const spectralRef = useRef<HTMLCanvasElement>(null);
   const waveRef = useRef<HTMLCanvasElement>(null);
+  const frozenRef = useRef(frozen);
+  frozenRef.current = frozen;
+  const rangeChangeRef = useRef(onFrozenRangeChange);
+  rangeChangeRef.current = onFrozenRangeChange;
+  const frozenFrameRef = useRef<PlotFrame | null>(null);
+  const panRef = useRef<{ px: number; start: number; end: number } | null>(null);
   const [spectrumInspect, setSpectrumInspect] = useState<SpectrumPointer | null>(null);
   const [waveInspect, setWaveInspect] = useState<WavePointer | null>(null);
 
+  // Live or frozen rendering. Frozen re-renders only when the range, settings, or size change.
   useEffect(() => {
     const spectrum = spectralRef.current!;
     const wave = waveRef.current!;
     const renderer = new PlotRenderer();
-    let previous: PlotFrame | null | undefined;
-    let previousSize = '';
     let handle = 0;
+    let previousFrame: PlotFrame | null | undefined;
+    let previousSize = '';
+    let previousFrozenSig = '';
     const draw = () => {
-      let frame: PlotFrame | null;
-      if (frozenFrame) {
-        frame = frozenFrame;
+      const size = `${spectrum.clientWidth}:${spectrum.clientHeight}:${wave.clientHeight}:${window.devicePixelRatio}`;
+      const fz = frozenRef.current;
+      if (fz) {
+        const width = Math.max(1, spectrum.clientWidth - PLOT_LEFT - PLOT_RIGHT);
+        const sig = `${fz.start}:${fz.end}:${size}:${settingsKey(settings)}`;
+        if (sig !== previousFrozenSig) {
+          const frame = fz.analysis.renderRange(fz.start, fz.end, settings, width);
+          renderer.draw(spectrum, wave, frame, normalizeView(settings, sampleRate));
+          frozenFrameRef.current = frame;
+          previousFrozenSig = sig;
+        }
       } else {
         controller.requestView(settings, Math.max(1, spectrum.clientWidth - PLOT_LEFT - PLOT_RIGHT));
-        frame = controller.getView();
-      }
-      const size = `${spectrum.clientWidth}:${spectrum.clientHeight}:${wave.clientHeight}:${window.devicePixelRatio}`;
-      if (frame !== previous || size !== previousSize) {
-        renderer.draw(spectrum, wave, frame, normalizeView(settings, sampleRate));
-        previous = frame;
-        previousSize = size;
+        const frame = controller.getView();
+        if (frame !== previousFrame || size !== previousSize) {
+          renderer.draw(spectrum, wave, frame, normalizeView(settings, sampleRate));
+          previousFrame = frame;
+          previousSize = size;
+        }
       }
       handle = requestAnimationFrame(draw);
     };
     handle = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(handle);
-  }, [controller, sampleRate, settings, frozenFrame]);
+  }, [controller, sampleRate, settings, frozen?.analysis]);
 
-  const stateLabel = frozenFrame
-    ? 'Frozen · capture continues'
-    : status === 'running' ? 'Live' : retained ? 'Stopped · last view' : 'Ready';
+  // Native non-passive wheel so frozen zoom can preventDefault without page scroll.
+  useEffect(() => {
+    const fz = frozenRef.current;
+    if (!fz) return;
+    const canvas = spectralRef.current!;
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      const current = frozenRef.current;
+      if (!current) return;
+      const rect = canvas.getBoundingClientRect();
+      const plotWidth = rect.width - PLOT_LEFT - PLOT_RIGHT;
+      const fraction = plotWidth > 0 ? clamp01((event.clientX - rect.left - PLOT_LEFT) / plotWidth) : 0.5;
+      const span = current.end - current.start;
+      const anchor = current.start + fraction * span;
+      const factor = Math.exp(event.deltaY * 0.0022);
+      const minDuration = Math.max(64, Math.round(current.analysis.sampleRate * 0.002));
+      const newSpan = Math.max(minDuration, Math.min(current.analysis.displayEnd, span * factor));
+      const clamped = clampFrozenRange(current.analysis, anchor - fraction * newSpan, anchor + (1 - fraction) * newSpan);
+      rangeChangeRef.current(clamped.start, clamped.end);
+    };
+    canvas.addEventListener('wheel', onWheel, { passive: false });
+    return () => canvas.removeEventListener('wheel', onWheel);
+  }, [frozen !== null]);
 
-  const onSpectrumPointer = (event: ReactPointerEvent<HTMLCanvasElement>) => {
-    if (!frozenFrame) return;
+  const beginPan = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    const current = frozenRef.current;
+    if (!current || event.button !== 0) return;
+    panRef.current = { px: event.clientX, start: current.start, end: current.end };
+    setSpectrumInspect(null);
+    setWaveInspect(null);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const movePan = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    const pan = panRef.current;
+    const current = frozenRef.current;
+    if (!pan || !current) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const plotWidth = rect.width - PLOT_LEFT - PLOT_RIGHT;
+    const span = pan.end - pan.start;
+    const delta = plotWidth > 0 ? -((event.clientX - pan.px) / plotWidth) * span : 0;
+    const clamped = clampFrozenRange(current.analysis, pan.start + delta, pan.end + delta);
+    rangeChangeRef.current(clamped.start, clamped.end);
+  };
+
+  const endPan = () => { panRef.current = null; };
+
+  const onSpectrumPointerMove = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (panRef.current) { movePan(event); return; }
+    if (!frozenRef.current) return;
     const rect = event.currentTarget.getBoundingClientRect();
     const px = event.clientX - rect.left;
     const py = event.clientY - rect.top;
@@ -77,26 +143,28 @@ export function VisualizationPanel({ controller, settings, frozenFrame }: {
       yf: plotHeight > 0 ? clamp01((py - PLOT_TOP) / plotHeight) : 0,
     });
   };
-  const onWavePointer = (event: ReactPointerEvent<HTMLCanvasElement>) => {
-    if (!frozenFrame) return;
+
+  const onWavePointerMove = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (panRef.current) { movePan(event); return; }
+    if (!frozenRef.current) return;
     const rect = event.currentTarget.getBoundingClientRect();
     const px = event.clientX - rect.left;
     const plotWidth = rect.width - PLOT_LEFT - PLOT_RIGHT;
     setWaveInspect({ px, xf: plotWidth > 0 ? clamp01((px - PLOT_LEFT) / plotWidth) : 0 });
   };
 
-  const spectrumReading = frozenFrame && spectrumInspect
-    ? inspectSpectrum(frozenFrame, spectrumInspect.xf, spectrumInspect.yf)
-    : null;
-  const waveReading = frozenFrame && waveInspect
-    ? inspectWaveform(frozenFrame, clamp01(waveInspect.xf))
-    : null;
+  const stateLabel = frozen ? 'Frozen · capture continues' : status === 'running' ? 'Live' : retained ? 'Stopped · last view' : 'Ready';
+  const spectrumReading = frozenFrameRef.current && spectrumInspect
+    ? inspectSpectrum(frozenFrameRef.current, spectrumInspect.xf, spectrumInspect.yf) : null;
+  const waveReading = frozenFrameRef.current && waveInspect
+    ? inspectWaveform(frozenFrameRef.current, waveInspect.xf) : null;
 
   return (
     <section className="workspace" aria-label="Live visualization workspace">
       <section className="panel spectrum-panel" aria-labelledby="spectrogram-heading">
         <div className="panel-heading">
-          <h2 id="spectrogram-heading">Spectrogram</h2><span>{stateLabel} · frequency in Hz</span>
+          <h2 id="spectrogram-heading">Spectrogram</h2>
+          <span>{frozen ? 'Frozen — scroll to zoom, drag to pan' : `${stateLabel} · frequency in Hz`}</span>
         </div>
         <div className="canvas-frame">
           <canvas
@@ -104,12 +172,16 @@ export function VisualizationPanel({ controller, settings, frozenFrame }: {
             className="spectrum-canvas"
             role="img"
             aria-label="Live spectrogram: frequency against time, color indicates spectral amplitude"
-            onPointerMove={frozenFrame ? onSpectrumPointer : undefined}
-            onPointerLeave={frozenFrame ? () => setSpectrumInspect(null) : undefined}
+            onPointerDown={frozen ? beginPan : undefined}
+            onPointerMove={frozen ? onSpectrumPointerMove : undefined}
+            onPointerUp={frozen ? endPan : undefined}
+            onPointerCancel={frozen ? endPan : undefined}
+            onLostPointerCapture={frozen ? endPan : undefined}
+            onPointerLeave={frozen ? () => { endPan(); setSpectrumInspect(null); } : undefined}
           >
             Spectrogram visualization. Digital peak and RMS levels are available numerically above.
           </canvas>
-          {frozenFrame && spectrumInspect && (
+          {frozen && spectrumInspect && !panRef.current && (
             <>
               <span className="cursor-x" style={{ left: `${spectrumInspect.px}px` }} aria-hidden="true" />
               <span className="cursor-y" style={{ top: `${spectrumInspect.py}px` }} aria-hidden="true" />
@@ -137,12 +209,16 @@ export function VisualizationPanel({ controller, settings, frozenFrame }: {
             className="waveform-canvas"
             role="img"
             aria-label="Live waveform: digital amplitude against time"
-            onPointerMove={frozenFrame ? onWavePointer : undefined}
-            onPointerLeave={frozenFrame ? () => setWaveInspect(null) : undefined}
+            onPointerDown={frozen ? beginPan : undefined}
+            onPointerMove={frozen ? onWavePointerMove : undefined}
+            onPointerUp={frozen ? endPan : undefined}
+            onPointerCancel={frozen ? endPan : undefined}
+            onLostPointerCapture={frozen ? endPan : undefined}
+            onPointerLeave={frozen ? () => { endPan(); setWaveInspect(null); } : undefined}
           >
             Waveform visualization. Change visible history to 5 ms for individual sample detail.
           </canvas>
-          {frozenFrame && waveInspect && (
+          {frozen && waveInspect && !panRef.current && (
             <>
               <span className="cursor-x" style={{ left: `${waveInspect.px}px` }} aria-hidden="true" />
               <output className="inspect-readout waveform-readout" aria-label="Waveform inspection">

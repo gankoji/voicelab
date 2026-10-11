@@ -207,3 +207,36 @@ test('freezes the view for inspection without stopping capture, then resumes', a
   await expect(page.getByLabel('Spectrogram inspection')).toBeHidden();
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
 });
+
+test('zooms and pans a frozen snapshot without stopping capture', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Record', exact: true }).click();
+  await expect(page.getByRole('status', { name: 'Capture status' })).toHaveText('Live · mic on');
+  const spectrum = page.getByRole('img', { name: /^Live spectrogram/ });
+  await expect.poll(async () => Number(await spectrum.getAttribute('data-end-sample'))).toBeGreaterThan(60000);
+
+  await page.getByRole('button', { name: 'Freeze' }).click();
+  await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
+  await expect.poll(async () => Number(await spectrum.getAttribute('data-end-sample'))).toBeGreaterThan(0);
+  const originalEnd = Number(await spectrum.getAttribute('data-end-sample'));
+
+  await spectrum.hover();
+  await page.mouse.wheel(0, -240); // zoom in around the center: the visible span shrinks.
+  await expect.poll(async () => Number(await spectrum.getAttribute('data-end-sample'))).toBeLessThan(originalEnd);
+  const zoomedEnd = Number(await spectrum.getAttribute('data-end-sample'));
+
+  // Drag to pan: the end sample shifts even though the zoomed span stays the same.
+  const box = await spectrum.boundingBox();
+  if (!box) throw new Error('Spectrogram is not visible');
+  const y = box.y + box.height * 0.5;
+  await page.mouse.move(box.x + box.width * 0.6, y);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.8, y, { steps: 5 });
+  await page.mouse.up();
+  await expect.poll(async () => Number(await spectrum.getAttribute('data-end-sample'))).not.toBe(zoomedEnd);
+
+  await expect(page.getByRole('status', { name: 'Capture status' })).toHaveText('Live · mic on');
+  await page.getByRole('button', { name: 'Resume' }).click();
+  await expect(page.getByRole('button', { name: 'Freeze' })).toBeVisible();
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
+});

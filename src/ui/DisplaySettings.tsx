@@ -3,10 +3,11 @@ import type { CaptureController } from '../audio/capture-controller';
 import { normalizeView } from '../analysis/view';
 import type { ViewSettings } from '../analysis/view';
 
-export function DisplaySettings({ controller, settings, onChange }: {
+export function DisplaySettings({ controller, settings, onChange, frozen }: {
   controller: CaptureController;
   settings: ViewSettings;
   onChange: (settings: ViewSettings) => void;
+  frozen: boolean;
 }) {
   const status = useSyncExternalStore(controller.subscribe, () => controller.getSnapshot().status);
   const retained = controller.getView();
@@ -22,10 +23,11 @@ export function DisplaySettings({ controller, settings, onChange }: {
     <section className="view-controls" aria-labelledby="display-settings-heading">
       <h3 id="display-settings-heading">Display</h3>
       {stoppedWithView && <p className="capture-note">The stopped view stays as captured. New settings apply the next time you record.</p>}
+      {frozen && <p className="capture-note">While frozen, drag or scroll on the plots to zoom and pan; visible history and analysis detail are fixed in the snapshot.</p>}
       <fieldset disabled={controlsDisabled}>
         <legend className="visually-hidden">Live plot controls</legend>
         <label>Visible history
-          <select value={settings.historySeconds} onChange={(e) => update({ historySeconds: Number(e.target.value) })}>
+          <select value={settings.historySeconds} disabled={frozen} onChange={(e) => update({ historySeconds: Number(e.target.value) })}>
             <option value={0.005}>5 ms · sample detail</option>
             <option value={0.02}>20 ms · waveform detail</option>
             <option value={0.1}>100 ms</option>
@@ -52,7 +54,7 @@ export function DisplaySettings({ controller, settings, onChange }: {
           </select>
         </label>
         <label>Analysis detail
-          <select value={settings.fftSize} onChange={(e) => update({ fftSize: Number(e.target.value) })}>
+          <select value={settings.fftSize} disabled={frozen} onChange={(e) => update({ fftSize: Number(e.target.value) })}>
             <option value={1024}>Timing · 1024 samples</option>
             <option value={2048}>Balanced · 2048 samples</option>
             <option value={4096}>Frequency · 4096 samples</option>

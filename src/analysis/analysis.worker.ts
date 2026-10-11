@@ -1,12 +1,12 @@
 import type {
-  MeterRequest, PipelineInit, RecycledBlock, SampleBlock, ViewRequest, WorkerReply,
+  MeterRequest, PipelineInit, RecycledBlock, SampleBlock, SnapshotRequest, ViewRequest, WorkerReply,
 } from '../audio/protocol';
 import { LevelAccumulator } from './levels';
 import { LiveAnalysis } from './live-analysis';
 
 // A narrow worker scope avoids mixing the DOM and WebWorker global libraries.
 const scope = self as unknown as {
-  onmessage: ((event: MessageEvent<PipelineInit | MeterRequest | ViewRequest>) => void) | null;
+  onmessage: ((event: MessageEvent<PipelineInit | MeterRequest | ViewRequest | SnapshotRequest>) => void) | null;
   postMessage(message: WorkerReply, transfer?: Transferable[]): void;
 };
 
@@ -38,5 +38,10 @@ scope.onmessage = ({ data }) => {
     scope.postMessage({ type: 'view', sessionId, frame }, [
       frame.spectrum.buffer, frame.minimum.buffer, frame.maximum.buffer, frame.rms.buffer, frame.trace.buffer,
     ]);
+  } else if (data.type === 'snapshot' && data.sessionId === sessionId && analysis) {
+    const samples = analysis.audio.retainedSamples();
+    scope.postMessage({
+      type: 'snapshot', sessionId, samples, sampleRate: analysis.sampleRate, endSample: analysis.audio.endSample,
+    }, [samples.buffer]);
   }
 };

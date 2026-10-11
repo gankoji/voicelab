@@ -123,19 +123,22 @@ rolling history. Display settings remain editable while stopped; changes apply
 the next time the user records, and the stopped view stays as captured. Starting
 clears it.
 
-Freeze captures the currently rendered frame (indexed-color spectrum raster plus
-waveform min/max/trace arrays). These buffers are transferred to the main thread
-and never mutated afterward, so the frozen snapshot is stable while capture
-continues filling the worker's history. Resume returns to the live, scrolling
-view. Cursor inspection reads time, frequency, and an approximate dB value from
-that same frozen raster (quantized to the color scale), plus exact waveform
-min/max.
+Freeze copies the worker's retained raw audio into an immutable snapshot and
+returns it to the main thread. A `FrozenAnalysis` there re-runs the STFT once
+per FFT size and re-rasterizes the spectrogram plus waveform min/max over an
+explicit sample range. Both plots share that range; scroll zooms around the
+cursor and drag pans, clamped to the snapshot with a small minimum duration. The
+live worker keeps streaming while frozen. Resume discards the snapshot and
+returns to the scrolling view.
 
-A full zoom/pan inspection over the retained history requires keeping a raw-audio
-snapshot and re-running analysis rather than the rendered raster; that remains a
-follow-up. Keep microphone status
-visible. Stopping capture releases tracks/nodes and leaves the snapshot
-available until explicitly discarded or the page is closed.
+This re-analysis runs on the main thread while the snapshot exists. It is a
+user-triggered, non-real-time path (the STFT over ≤30 s is a one-time cost; zoom
+only re-rasterizes), so it does not compete with the worklet's real-time
+scheduling. It does duplicate a small amount of the live frame-building logic;
+moving it to a second worker remains an optimization if profiling shows a need.
+
+A full re-analysis is now supported; stopping capture still releases tracks and
+nodes and leaves the last live view available until the page closes.
 
 Handle stop while permission is pending: late successful streams must be
 immediately stopped if the request is no longer current. Track-ended, suspended

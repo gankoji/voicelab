@@ -1,6 +1,6 @@
 import workletUrl from './capture.worklet?worker&url';
 import { METER_INTERVAL_MS } from './protocol';
-import type { MeterReading, MeterRequest, PipelineInit, ViewRequest, WorkerReply } from './protocol';
+import type { MeterReading, MeterRequest, PipelineInit, SnapshotRequest, ViewRequest, WorkerReply } from './protocol';
 import type { PlotFrame, ViewSettings } from '../analysis/view';
 
 export type CaptureStatus = 'idle' | 'requesting' | 'running' | 'stopped' | 'error';
@@ -65,6 +65,7 @@ interface Session {
   awaitingMeter: boolean;
   awaitingView: boolean;
   lastViewRequest: number;
+  pendingSnapshotResolve?: (snapshot: { samples: Float32Array<ArrayBuffer>; sampleRate: number; endSample: number }) => void;
   lastProgress: number;
 }
 
@@ -118,6 +119,24 @@ export class CaptureController {
     session.lastViewRequest = now;
     const request: ViewRequest = { type: 'read-view', sessionId: session.id, settings, width };
     session.worker.postMessage(request);
+  }
+
+  /** Copies the retained audio out of the live worker for an immutable frozen view. */
+  requestSnapshot(): Promise<{ samples: Float32Array<ArrayBuffer>; sampleRate: number; endSample: number }> {
+    const session = this.session;
+    if (!session?.worker || this.state.status !== 'running') return Promise.reject(new Error('Capture is not running.'));
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        session.pendingSnapshotResolve = undefined;
+        reject(new Error('The frozen snapshot could not be read. Try again.'));
+      }, 5000);
+      session.pendingSnapshotResolve = (snapshot) => {
+        clearTimeout(timeout);
+        resolve(snapshot);
+      };
+      const request: SnapshotRequest = { type: 'snapshot', sessionId: session.id };
+      session.worker!.postMessage(request);
+    });
   }
 
   subscribe = (listener: () => void) => {
@@ -259,6 +278,12 @@ export class CaptureController {
           } else if (data.type === 'view') {
             session.awaitingView = false;
             if (this.state.status === 'running') this.view = data.frame;
+          } else if (data.type === 'snapshot') {
+            if (data.sessionId !== session.id) return;
+            session.pendingSnapshotResolve?.({
+              samples: data.samples, sampleRate: data.sampleRate, endSample: data.endSample,
+            });
+            session.pendingSnapshotResolve = undefined;
           }
         };
         const workerInit: PipelineInit = {

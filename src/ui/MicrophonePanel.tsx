@@ -20,11 +20,12 @@ function processingLabel(value: boolean | string | undefined) {
   return value === undefined ? 'Unknown' : value ? 'On' : 'Off';
 }
 
-export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, frozen, onFreezeToggle, children }: {
+export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, frozen, freezePending, onFreezeToggle, children }: {
   controller: CaptureController;
   settingsOpen: boolean;
   onSettingsChange: (open: boolean) => void;
   frozen: boolean;
+  freezePending: boolean;
   onFreezeToggle: () => void;
   children: ReactNode;
 }) {
@@ -126,7 +127,7 @@ export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, fr
             type="button"
             className={frozen ? 'freeze-button is-frozen' : 'freeze-button'}
             title={frozen ? 'Return to the live, scrolling view' : 'Freeze the current view for inspection (capture continues)'}
-            disabled={!frozen && capture.status !== 'running'}
+            disabled={freezePending || (!frozen && capture.status !== 'running')}
             onClick={onFreezeToggle}
           >
             <span className="freeze-icon" aria-hidden="true" />

@@ -37,6 +37,11 @@ export interface ViewRequest {
   width: number;
 }
 
+export interface SnapshotRequest {
+  type: 'snapshot';
+  sessionId: number;
+}
+
 export interface MeterReading {
   /** Levels across samples received since the previous read, not smoothed dB. */
   peakDbfs: number;
@@ -50,4 +55,5 @@ export interface MeterReading {
 export type WorkerReply =
   | { type: 'ready'; sessionId: number }
   | { type: 'meter'; sessionId: number; reading: MeterReading | null }
-  | { type: 'view'; sessionId: number; frame: PlotFrame };
+  | { type: 'view'; sessionId: number; frame: PlotFrame }
+  | { type: 'snapshot'; sessionId: number; samples: Float32Array<ArrayBuffer>; sampleRate: number; endSample: number };

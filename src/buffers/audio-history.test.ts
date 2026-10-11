@@ -39,4 +39,16 @@ describe('bounded audio history', () => {
     expect(audio.sampleAt(9999)).toBeNaN();
     expect(audio.summarize(10000, 10016)?.maximum).toBe(0.25);
   });
+
+  it('returns a contiguous copy of the retained range with gaps preserved as NaN', () => {
+    const audio = new AudioHistory(256);
+    audio.append(new Float32Array(64).fill(0.5), 0);
+    audio.append(new Float32Array(32).fill(1), 128); // 64..127 is a gap
+    const retained = audio.retainedSamples();
+    expect(retained).toBeInstanceOf(Float32Array);
+    expect(retained.length).toBe(160);
+    expect(Array.from(retained.subarray(64, 128))).toEqual(new Array(64).fill(NaN));
+    expect(retained[63]).toBe(0.5);
+    expect(retained[128]).toBe(1);
+  });
 });

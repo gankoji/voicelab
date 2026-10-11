@@ -66,6 +66,14 @@ export class AudioHistory {
     return this.samples[n % this.capacity]!;
   }
 
+  /** A contiguous copy of the currently retained range (gaps stay NaN, never zero-filled). */
+  retainedSamples(): Float32Array<ArrayBuffer> {
+    const start = Math.max(0, this.endSample - this.capacity);
+    const out = new Float32Array(this.endSample - start);
+    for (let n = start; n < this.endSample; n++) out[n - start] = this.samples[n % this.capacity]!;
+    return out;
+  }
+
   summarize(start: number, end: number): RangeSummary | null {
     if (start < Math.max(0, this.endSample - this.capacity) || end > this.endSample || end <= start) return null;
     let minimum = Infinity;
