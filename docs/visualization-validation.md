@@ -92,17 +92,18 @@ cadence measurements are still release-hardening work.
 After syncing the milestone, run `npm ci` (new FFT dependency), then
 `npm run dev` from the primary checkout.
 
-1. Start the mic. A sustained vowel should show horizontal harmonic bands.
+1. Press **Record**. A sustained vowel should show horizontal harmonic bands.
 2. Slide pitch; those bands should move together. Change vowel; relative band
    brightness should change. These are not yet automatic F0/formant tracks.
 3. Change volume moderately; the waveform and fixed spectral colors should
    reflect it. Check the numerical input levels as a separate reference.
-4. Expand **Display settings**. Try logarithmic frequency, a 5 kHz upper limit,
-   the frequency-detail preset, and the optional RMS overlay.
+4. Open **Settings**, then the Display controls. Try logarithmic frequency, a
+   5 kHz upper limit, the frequency-detail preset, and the optional RMS overlay.
 5. Switch to 20 ms/5 ms visible history to see waveform cycles. Both panels
    keep the same displayed time interval.
-6. Stop. Verify capture releases, plots stop, and the last view stays visible.
-   Restart; previous history must clear rather than joining unrelated sessions.
+6. Press **Stop**. Verify capture releases, plots stop, and the last view stays
+   visible. Record again; previous history must clear rather than joining
+   unrelated sessions.
 7. Resize the window and check labels/controls and the shared horizontal axes.
 
 Report unexpected behavior with browser/OS, input device, selected settings,

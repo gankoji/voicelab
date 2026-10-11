@@ -37,13 +37,14 @@ Microphone capture requires a secure context: localhost for desktop
 development or HTTPS for deployment and testing from another device. A phone
 visiting a plain HTTP LAN address is not equivalent to localhost.
 
-Choose an input, press **Start microphone**, and allow browser microphone access.
-Sing or speak to watch peak and RMS levels; expand **Capture details and
-processing** to inspect reported settings and sample counters. Selecting another
-input stops capture until you explicitly start it again. Capture also stops
-when the page is hidden or left; it never resumes automatically.
+Open the app and press **Record** to begin live analysis. The spectrogram and
+waveform fill most of the window; a compact toolbar shows capture status and
+peak/RMS levels. Use **Settings** to choose an input or adjust the plots; use
+**Stop** to release the microphone. Selecting another input stops capture until
+you explicitly record again. Capture also stops when the page is hidden or left;
+it never resumes automatically.
 
-The plots share a scrolling time axis. Expand **Display settings** for:
+The plots share a scrolling time axis. In **Settings**, under Display, choose:
 
 - Visible history from 5 ms (sample detail on sufficiently wide screens) to 30 s.
 - Linear/log frequency scale and frequency limits.

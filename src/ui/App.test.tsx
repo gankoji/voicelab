@@ -1,25 +1,33 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { App } from './App';
 
-describe('live visualization application', () => {
-  it('distinguishes the working plots from upcoming inspection and exports', () => {
+describe('graph-first application', () => {
+  it('starts with record controls and plots, without a settings form or development banner', () => {
     render(<App />);
 
     expect(screen.getByRole('heading', { name: 'Voice Lab' })).toBeInTheDocument();
-    expect(screen.getByText(/exports are still in development/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Start microphone' })).toBeEnabled();
-    expect(screen.getByText(/Microphone inactive/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Record' })).toBeEnabled();
+    expect(screen.getByRole('status', { name: 'Capture status' })).toHaveTextContent('Ready');
+    expect(screen.getByLabelText('Audio input')).not.toBeVisible();
+    expect(screen.getByLabelText('Visible history')).not.toBeVisible();
+    expect(screen.getByText('Audio stays on this device. Nothing is saved.')).toBeVisible();
+    expect(screen.queryByRole('complementary', { name: 'Development status' })).not.toBeInTheDocument();
   });
 
-  it('exposes plot controls and the required second-phase tracking', () => {
+  it('reveals controls on demand and restores focus when dismissed', () => {
     render(<App />);
 
     expect(screen.getByRole('heading', { name: 'Spectrogram' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Waveform' })).toBeInTheDocument();
+    const settings = screen.getByRole('button', { name: 'Settings' });
+    fireEvent.click(settings);
+    expect(screen.getByRole('button', { name: 'Close settings' })).toHaveFocus();
+    expect(screen.getByLabelText('Visible history')).toBeVisible();
     expect(screen.getByLabelText('Visible history')).toHaveValue('10');
     expect(screen.getByLabelText('Show RMS amplitude')).not.toBeChecked();
-    expect(screen.getByText('Required · Phase 2')).toBeInTheDocument();
-    expect(screen.getByText(/F0 frequency.*F1–F3/)).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByLabelText('Visible history')).not.toBeVisible();
+    expect(settings).toHaveFocus();
   });
 });

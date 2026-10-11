@@ -1,45 +1,30 @@
 import { useState } from 'react';
 import { CaptureController } from '../audio/capture-controller';
+import { DEFAULT_VIEW } from '../analysis/view';
 import { MicrophonePanel } from './MicrophonePanel';
 import { VisualizationPanel } from './VisualizationPanel';
+import { DisplaySettings } from './DisplaySettings';
 
 export function App() {
   const [controller] = useState(() => new CaptureController());
+  const [settings, setSettings] = useState(DEFAULT_VIEW);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   return (
-    <main className="app">
-      <header className="intro">
-        <p className="eyebrow">An open-source workspace for your voice</p>
+    <main className={settingsOpen ? 'app settings-open' : 'app'}>
+      <header className="app-header">
         <h1>Voice Lab</h1>
-        <p className="lede">
-          Explore the shape, pitch, and resonance of your singing.
-          Built for your browser, designed to keep your audio on your device.
-        </p>
+        <span>Live voice analysis</span>
       </header>
 
-      <aside className="status" aria-label="Development status">
-        <span className="badge">Live visualization milestone</span>
-        <p>
-          Sing or speak to explore your spectrum and waveform.
-          Freezing, inspection, and exports are still in development.
-        </p>
-      </aside>
+      <MicrophonePanel controller={controller} settingsOpen={settingsOpen} onSettingsChange={setSettingsOpen}>
+        <DisplaySettings controller={controller} settings={settings} onChange={setSettings} />
+      </MicrophonePanel>
 
-      <MicrophonePanel controller={controller} />
-      <VisualizationPanel controller={controller} />
-
-      <section className="next-phase" aria-labelledby="tracking-heading">
-        <div>
-          <p className="eyebrow">Required · Phase 2</p>
-          <h2 id="tracking-heading">Pitch and resonance tracking</h2>
-        </div>
-        <p>
-          F0 frequency, musical note and cents in 12-tone equal temperament,
-          plus F1–F3 formant estimates with uncertainty shown.
-        </p>
-      </section>
+      <VisualizationPanel controller={controller} settings={settings} />
 
       <footer>
-        Made for exploration, not diagnosis. Digital levels are not calibrated sound pressure levels.
+        <span>Audio stays on this device. Nothing is saved.</span>
+        <span>Live analysis only · exports coming later</span>
       </footer>
     </main>
   );

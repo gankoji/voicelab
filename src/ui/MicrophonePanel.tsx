@@ -1,12 +1,13 @@
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import type { ReactNode } from 'react';
 import type { CaptureController, CaptureStatus } from '../audio/capture-controller';
 
 const statusLabels: Record<CaptureStatus, string> = {
-  idle: 'Microphone off',
-  requesting: 'Starting microphone',
-  running: 'Microphone on',
-  stopped: 'Microphone off',
-  error: 'Capture unavailable',
+  idle: 'Ready',
+  requesting: 'Connecting…',
+  running: 'Live · mic on',
+  stopped: 'Stopped',
+  error: 'Mic unavailable',
 };
 
 function formatLevel(value: number | undefined) {
@@ -19,12 +20,32 @@ function processingLabel(value: boolean | string | undefined) {
   return value === undefined ? 'Unknown' : value ? 'On' : 'Off';
 }
 
-export function MicrophonePanel({ controller }: { controller: CaptureController }) {
+export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, children }: {
+  controller: CaptureController;
+  settingsOpen: boolean;
+  onSettingsChange: (open: boolean) => void;
+  children: ReactNode;
+}) {
   const capture = useSyncExternalStore(controller.subscribe, controller.getSnapshot);
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [deviceId, setDeviceId] = useState('');
   const [deviceError, setDeviceError] = useState('');
   const active = capture.status === 'requesting' || capture.status === 'running';
+  const settingsButton = useRef<HTMLButtonElement>(null);
+  const closeButton = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!settingsOpen) return;
+    closeButton.current?.focus();
+    const escape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return;
+      event.preventDefault();
+      onSettingsChange(false);
+      settingsButton.current?.focus();
+    };
+    window.addEventListener('keydown', escape);
+    return () => window.removeEventListener('keydown', escape);
+  }, [onSettingsChange, settingsOpen]);
 
   useEffect(() => {
     const pageHidden = () => {
@@ -79,69 +100,78 @@ export function MicrophonePanel({ controller }: { controller: CaptureController 
   const processingUncertain = settings && [
     settings.autoGainControl, settings.echoCancellation, settings.noiseSuppression,
   ].some((value) => value !== false);
+  const showNotice = capture.status === 'error' || capture.status === 'requesting'
+    || (capture.status === 'stopped' && capture.message !== 'Microphone stopped — no audio is being captured.');
 
   return (
-    <section className="capture panel" aria-labelledby="capture-heading">
-      <div className="panel-heading">
-        <h2 id="capture-heading">Microphone</h2>
-        <span className={active ? 'capture-indicator active' : 'capture-indicator'}>
-          {statusLabels[capture.status]}
-        </span>
-      </div>
-      <div className="capture-body">
-        <div className="capture-controls">
-          <div className="input-choice">
-            <label htmlFor="microphone-input">Audio input</label>
-            <select
-              id="microphone-input"
-              value={deviceId}
-              disabled={capture.status === 'requesting'}
-              onChange={(event) => {
-                if (active) controller.stop('Input changed. Press Start microphone to use it.');
-                setDeviceId(event.target.value);
-              }}
-            >
-              <option value="">Default input</option>
-              {devices.filter((device) => device.deviceId && device.deviceId !== 'default').map((device, index) => (
-                <option key={device.deviceId} value={device.deviceId}>
-                  {device.label || `Microphone ${index + 1}`}
-                </option>
-              ))}
-            </select>
-          </div>
+    <>
+      <section className="capture-toolbar" aria-label="Capture controls">
+        <div className="transport-row">
           <button
             type="button"
-            className={active ? 'stop-button' : ''}
+            className={active ? 'record-button is-active' : 'record-button'}
+            title={active ? 'Stop microphone capture' : 'Analyze live microphone input — not saved'}
             onClick={() => active ? controller.stop() : void controller.start(deviceId)}
           >
-            {active ? 'Stop microphone' : 'Start microphone'}
+            <span className={active ? 'stop-icon' : 'record-icon'} aria-hidden="true" />
+            {active ? 'Stop' : 'Record'}
+          </button>
+          <span role="status" aria-label="Capture status" className={active ? 'capture-indicator active' : 'capture-indicator'}
+            title={capture.details?.deviceLabel ?? capture.message}>
+            {statusLabels[capture.status]}
+          </span>
+          <div className="meters" aria-label="Digital input levels">
+            <div className="level-row">
+              <label htmlFor="peak-meter">Peak</label>
+              <meter id="peak-meter" min={-60} max={0} value={Math.min(0, Math.max(-60, reading?.peakDbfs ?? -60))}
+                aria-valuetext={formatLevel(reading?.peakDbfs)} />
+              <output aria-label="Peak level" aria-live="off">{formatLevel(reading?.peakDbfs)}</output>
+            </div>
+            <div className="level-row">
+              <label htmlFor="rms-meter">RMS</label>
+              <meter id="rms-meter" min={-60} max={0} value={Math.min(0, Math.max(-60, reading?.rmsDbfs ?? -60))}
+                aria-valuetext={formatLevel(reading?.rmsDbfs)} />
+              <output aria-label="RMS level" aria-live="off">{formatLevel(reading?.rmsDbfs)}</output>
+            </div>
+          </div>
+          <button ref={settingsButton} type="button" className="settings-button"
+            aria-expanded={settingsOpen} aria-controls="analysis-settings"
+            onClick={() => onSettingsChange(!settingsOpen)}>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+              <path d="M4 7h16M4 17h16" />
+              <circle cx="9" cy="7" r="3" fill="currentColor" />
+              <circle cx="15" cy="17" r="3" fill="currentColor" />
+            </svg>
+            Settings
           </button>
         </div>
-        <p role={capture.status === 'error' ? 'alert' : 'status'} className="capture-message">
-          {capture.message}
-        </p>
-        {deviceError && <p className="capture-note">{deviceError}</p>}
+        {showNotice && <p role={capture.status === 'error' ? 'alert' : 'status'} className="capture-message">{capture.message}</p>}
+        {reading?.nearClipping && <p className="clip-warning" role="alert">Near digital clipping — lower your microphone input gain.</p>}
+        {Boolean(reading?.droppedSamples) && <p className="clip-warning">Audio gaps detected: {reading?.droppedSamples} samples were not processed.</p>}
+      </section>
 
-        <div className="meters">
-          <div className="level-row">
-            <label htmlFor="peak-meter">Peak</label>
-            <meter id="peak-meter" min={-60} max={0} value={Math.min(0, Math.max(-60, reading?.peakDbfs ?? -60))}
-              aria-valuetext={formatLevel(reading?.peakDbfs)} />
-            <output aria-label="Peak level" aria-live="off">{formatLevel(reading?.peakDbfs)}</output>
-          </div>
-          <div className="level-row">
-            <label htmlFor="rms-meter">RMS</label>
-            <meter id="rms-meter" min={-60} max={0} value={Math.min(0, Math.max(-60, reading?.rmsDbfs ?? -60))}
-              aria-valuetext={formatLevel(reading?.rmsDbfs)} />
-            <output aria-label="RMS level" aria-live="off">{formatLevel(reading?.rmsDbfs)}</output>
-          </div>
-          <p className={reading?.nearClipping ? 'clip-warning' : 'capture-note'}>
-            {reading?.nearClipping
-              ? 'Near digital clipping — lower your microphone input gain.'
-              : 'Digital levels · meter range −60 to 0 dBFS · not calibrated SPL'}
-          </p>
+      <aside id="analysis-settings" className="settings-panel panel" aria-label="Settings" hidden={!settingsOpen}>
+        <div className="settings-heading">
+          <h2>Settings</h2>
+          <button ref={closeButton} type="button" className="close-button" aria-label="Close settings"
+            onClick={() => { onSettingsChange(false); settingsButton.current?.focus(); }}>
+            <span aria-hidden="true">×</span>
+          </button>
         </div>
-
+        <section className="input-settings" aria-labelledby="input-heading">
+          <h3 id="input-heading">Input</h3>
+          <label htmlFor="microphone-input">Audio input</label>
+          <select id="microphone-input" value={deviceId} disabled={capture.status === 'requesting'}
+            onChange={(event) => {
+              if (active) controller.stop('Input changed. Press Record to use it.');
+              setDeviceId(event.target.value);
+            }}>
+            <option value="">Default input</option>
+            {devices.filter((device) => device.deviceId && device.deviceId !== 'default').map((device, index) => (
+              <option key={device.deviceId} value={device.deviceId}>{device.label || `Microphone ${index + 1}`}</option>
+            ))}
+          </select>
+          {deviceError && <p className="capture-note">{deviceError}</p>}
         {capture.details && settings && (
           <details className="capture-details">
             <summary>Capture details and processing</summary>
@@ -163,14 +193,14 @@ export function MicrophonePanel({ controller }: { controller: CaptureController 
             </p>
           </details>
         )}
-        {Boolean(reading?.droppedSamples) && (
-          <p className="clip-warning">Audio gaps detected: {reading?.droppedSamples} samples were not processed.</p>
-        )}
-        <p className="capture-note">
-          No speaker monitoring. Capture stops when you leave or hide this page.
-          Input names may appear after permission is granted.
-        </p>
-      </div>
-    </section>
+          <p className="capture-note">
+            Record starts live analysis, not a saved recording. No speaker monitoring.
+            Capture stops when you hide this page. Input names may appear after permission is granted.
+            Levels are digital dBFS, not calibrated SPL.
+          </p>
+        </section>
+        {children}
+      </aside>
+    </>
   );
 }

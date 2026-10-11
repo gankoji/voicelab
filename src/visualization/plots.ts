@@ -69,7 +69,7 @@ export class PlotRenderer {
       for (const plot of [spectral, wave]) {
         plot.context.fillStyle = '#bdd0d7';
         plot.context.textAlign = 'center';
-        plot.context.fillText('Start the microphone to see live audio', plot.width / 2, plot.height / 2);
+        plot.context.fillText('Press Record to begin', plot.width / 2, plot.height / 2);
       }
     }
 

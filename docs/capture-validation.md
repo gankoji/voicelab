@@ -82,22 +82,26 @@ npm run dev
 ```
 
 1. Open the printed localhost URL. Confirm no permission prompt or active
-   microphone appears before pressing **Start microphone**.
-2. Start, allow microphone access, and speak/sing. Peak and RMS should move.
-   You should not hear delayed playback from this app.
-3. Expand **Capture details and processing**. Check input, analysis sample rate,
-   reported processing, and advancing sample count. Unknown processing is valid.
+   microphone appears and only the two plots plus the compact toolbar are shown
+   before pressing **Record**.
+2. Press **Record**, allow microphone access, and speak/sing. Peak and RMS
+   should move and the plots should scroll. You should not hear delayed
+   playback from this app.
+3. Open **Settings**, then expand **Capture details and processing**. Check
+   input, analysis sample rate, reported processing, and advancing sample
+   count. Unknown processing is valid.
 4. Vary your volume or input gain moderately. Do not shout to test the clipping
    warning; synthetic tests cover that threshold.
-5. Stop. Confirm the browser's active-capture indicator goes away and readings
-   clear. The browser may retain permission without retaining active capture.
-6. Repeat start/stop, then select a different input if one is available.
-   Selection should stop capture and require another explicit start.
+5. Press **Stop**. Confirm the browser's active-capture indicator goes away and
+   readings clear. The browser may retain permission without retaining active
+   capture.
+6. Repeat record/stop, then select a different input in Settings if one is
+   available. Selection should stop capture and require another explicit record.
 7. Switch to another tab and return. Capture should be stopped with an
    explanation, not automatically resumed.
 8. Separately deny permission, then re-enable it in site/system settings and
    retry. Disconnect an external mic if available; recover through input
-   selection and start, without reloading.
+   selection and record, without reloading.
 
 Record browser/OS versions, microphone, processing settings, and any unexpected
 behavior. Do not share recordings unless you explicitly intend to.
