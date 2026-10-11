@@ -11,14 +11,17 @@ export function DisplaySettings({ controller, settings, onChange }: {
   const status = useSyncExternalStore(controller.subscribe, () => controller.getSnapshot().status);
   const retained = controller.getView();
   const sampleRate = controller.getSnapshot().details?.sampleRate ?? retained?.sampleRate ?? 48000;
-  const displayed = status !== 'running' && retained ? retained.settings : normalizeView(settings, sampleRate);
+  const displayed = normalizeView(settings, sampleRate);
   const update = (patch: Partial<ViewSettings>) => onChange({ ...settings, ...patch });
-  const controlsDisabled = status !== 'running' && retained !== null;
+  // Settings are editable whenever capture is not mid-request. While stopped, the
+  // frozen view is left as captured and changes apply the next time the user records.
+  const controlsDisabled = status === 'requesting';
+  const stoppedWithView = status === 'stopped' && retained !== null;
 
   return (
     <section className="view-controls" aria-labelledby="display-settings-heading">
       <h3 id="display-settings-heading">Display</h3>
-      {controlsDisabled && <p className="capture-note">Record again to change the stopped view.</p>}
+      {stoppedWithView && <p className="capture-note">The stopped view stays as captured. New settings apply the next time you record.</p>}
       <fieldset disabled={controlsDisabled}>
         <legend className="visually-hidden">Live plot controls</legend>
         <label>Visible history

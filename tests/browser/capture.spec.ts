@@ -162,7 +162,11 @@ test('draws the known tone in aligned plots, changes scales, and shows sample de
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
-  await expect(page.getByLabel('Visible history')).toBeDisabled();
+  // Settings stay editable while stopped, preparing the next recording.
+  await expect(page.getByLabel('Visible history')).toBeEnabled();
+  await expect(page.getByLabel('Audio input')).toBeEnabled();
+  await page.getByLabel('Visible history').selectOption('10');
+  await expect(page.getByText(/settings apply the next time you record/i)).toBeVisible();
   await page.getByRole('button', { name: 'Close settings' }).click();
   await expect(page.getByText(/Stopped · last view · linear amplitude/)).toBeVisible();
   expect(errors).toEqual([]);
