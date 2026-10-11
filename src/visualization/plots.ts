@@ -1,6 +1,7 @@
 import { frequencyFraction } from '../analysis/view';
 import type { PlotFrame, ViewSettings } from '../analysis/view';
 import type { PitchPoint } from '../analysis/pitch';
+import type { FormantPoint } from '../analysis/formants';
 import { PALETTES } from './palette';
 import { computeWaveformScale } from './scale';
 
@@ -51,7 +52,7 @@ export class PlotRenderer {
   private rasterCanvas = document.createElement('canvas');
   private image: ImageData | undefined;
 
-  draw(spectrogram: HTMLCanvasElement, waveform: HTMLCanvasElement, frame: PlotFrame | null, fallback: ViewSettings, pitch: PitchPoint[] = []) {
+  draw(spectrogram: HTMLCanvasElement, waveform: HTMLCanvasElement, frame: PlotFrame | null, fallback: ViewSettings, pitch: PitchPoint[] = [], formants: FormantPoint[] = []) {
     const spectral = prepare(spectrogram);
     const wave = prepare(waveform);
     if (!spectral || !wave) return;
@@ -82,6 +83,7 @@ export class PlotRenderer {
       spectral.context.drawImage(this.rasterCanvas, PLOT_LEFT, PLOT_TOP, spectral.plotWidth, spectral.plotHeight);
       this.drawWave(wave.context, wave.plotWidth, wave.plotHeight, frame, waveScale.gain);
       if (pitch.length) this.drawPitch(spectral.context, spectral.plotWidth, spectral.plotHeight, frame, pitch);
+      if (formants.length) this.drawFormants(spectral.context, spectral.plotWidth, spectral.plotHeight, frame, formants);
     } else {
       for (const plot of [spectral, wave]) {
         plot.context.fillStyle = '#bdd0d7';
@@ -207,5 +209,30 @@ export class PlotRenderer {
     }
     context.stroke();
     context.restore();
+  }
+
+  private drawFormants(context: CanvasRenderingContext2D, width: number, height: number, frame: PlotFrame, formants: FormantPoint[]) {
+    const colors = ['#ffb347', '#c56bff', '#79e6a0'];
+    for (let index = 0; index < 3; index++) {
+      context.save();
+      context.beginPath();
+      context.rect(PLOT_LEFT, PLOT_TOP, width, height);
+      context.clip();
+      context.strokeStyle = colors[index]!;
+      context.lineWidth = 1.5;
+      context.beginPath();
+      let connected = false;
+      for (const point of formants) {
+        const frequency = point.formants[index];
+        if (frequency === undefined) { connected = false; continue; }
+        const x = PLOT_LEFT + (point.sampleIndex - frame.startSample) / (frame.endSample - frame.startSample) * width;
+        const y = PLOT_TOP + (1 - frequencyFraction(frequency, frame.settings)) * height;
+        if (connected) context.lineTo(x, y);
+        else context.moveTo(x, y);
+        connected = true;
+      }
+      context.stroke();
+      context.restore();
+    }
   }
 }

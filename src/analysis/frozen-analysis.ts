@@ -4,6 +4,7 @@ import { Stft } from './stft';
 import { MAX_PLOT_WIDTH, SPECTRUM_ROWS, normalizeView } from './view';
 import type { PlotFrame, ViewSettings } from './view';
 import type { PitchPoint } from './pitch';
+import type { FormantPoint } from './formants';
 
 /**
  * Re-analysis of an immutable raw-audio snapshot, used while the live view is
@@ -15,13 +16,15 @@ export class FrozenAnalysis {
   private readonly snapshot: Float32Array;
   private readonly audio: AudioHistory;
   private readonly pitch: PitchPoint[];
+  private readonly formants: FormantPoint[];
   private stft: Stft;
   private spectra: SpectralHistory;
 
-  constructor(sampleRate: number, samples: Float32Array, initialFftSize: number, pitch: PitchPoint[] = []) {
+  constructor(sampleRate: number, samples: Float32Array, initialFftSize: number, pitch: PitchPoint[] = [], formants: FormantPoint[] = []) {
     this.sampleRate = sampleRate;
     this.snapshot = samples;
     this.pitch = pitch;
+    this.formants = formants;
     this.audio = new AudioHistory(samples.length);
     this.audio.append(samples, 0);
     this.spectra = this.createSpectra(initialFftSize);
@@ -44,6 +47,11 @@ export class FrozenAnalysis {
   /** Pitch points (snapshot-local sample index) within `[start, end)`, oldest first. */
   pitchRange(start: number, end: number): PitchPoint[] {
     return this.pitch.filter((point) => point.sampleIndex >= start && point.sampleIndex < end);
+  }
+
+  /** Formant points (snapshot-local sample index) within `[start, end)`, oldest first. */
+  formantRange(start: number, end: number): FormantPoint[] {
+    return this.formants.filter((point) => point.sampleIndex >= start && point.sampleIndex < end);
   }
 
   /** Rightmost sample whose analysis window is complete (aligned with the live view). */

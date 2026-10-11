@@ -25,6 +25,13 @@ export interface FormantEstimate {
   confidence: number;
 }
 
+export interface FormantPoint {
+  /** Center sample of the analysis window within the stream. */
+  sampleIndex: number;
+  formants: number[];
+  confidence: number;
+}
+
 /** Boxcar-average then decimate; the low-pass keeps formants and drops aliasing. */
 function lowpassDecimate(frame: Float32Array, factor: number): Float32Array {
   const length = Math.ceil(frame.length / factor);

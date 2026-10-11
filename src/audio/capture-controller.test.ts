@@ -257,9 +257,9 @@ describe('capture lifecycle', () => {
     expect(h.worker.postMessage.mock.calls.filter(([message]) => message.type === 'read-view')).toHaveLength(1);
     const state = h.controller.getSnapshot();
     const frame = new LiveAnalysis(48000).render(DEFAULT_VIEW, 500);
-    h.reply({ type: 'view', sessionId: sessionId - 1, frame, pitch: [] });
+    h.reply({ type: 'view', sessionId: sessionId - 1, frame, pitch: [], formants: [] });
     expect(h.controller.getView()).toBeNull();
-    h.reply({ type: 'view', sessionId, frame, pitch: [] });
+    h.reply({ type: 'view', sessionId, frame, pitch: [], formants: [] });
     expect(h.controller.getView()).toBe(frame);
     expect(h.controller.getSnapshot()).toBe(state);
     await vi.advanceTimersByTimeAsync(34);

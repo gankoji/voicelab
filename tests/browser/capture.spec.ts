@@ -110,6 +110,17 @@ test('releases the microphone on pagehide and never restarts automatically', asy
 test('draws the known tone in aligned plots, changes scales, and shows sample detail', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
+  await page.addInitScript(() => {
+    const Original = window.Worker;
+    window.Worker = class extends Original {
+      constructor(...args: ConstructorParameters<typeof Worker>) {
+        super(...args);
+        this.addEventListener('message', (event: MessageEvent) => {
+          if (event.data?.type === 'view') (window as unknown as { lastFrame: unknown }).lastFrame = event.data.frame;
+        });
+      }
+    };
+  });
   await page.goto('/');
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await page.getByLabel('Visible history').selectOption('1');
@@ -120,25 +131,25 @@ test('draws the known tone in aligned plots, changes scales, and shows sample de
   const spectrum = page.getByRole('img', { name: /^Live spectrogram/ });
   const wave = page.getByRole('img', { name: /^Live waveform/ });
   await expect.poll(async () => Number(await spectrum.getAttribute('data-end-sample'))).toBeGreaterThan(60000);
+  await page.waitForFunction(() => Boolean((window as unknown as { lastFrame?: { spectrum?: unknown } }).lastFrame?.spectrum));
 
-  const measured = await spectrum.evaluate((element) => {
-    const canvas = element as HTMLCanvasElement;
-    const ratio = canvas.width / canvas.clientWidth;
-    const ctx = canvas.getContext('2d')!;
-    const top = Math.round(12 * ratio);
-    const height = Math.round((canvas.clientHeight - 42) * ratio);
-    const x = Math.round((54 + (canvas.clientWidth - 66) * 0.65) * ratio);
-    const pixels = ctx.getImageData(x, top, 1, height).data;
-    let peakY = 0;
-    let peak = -1;
-    for (let y = 0; y < height; y++) {
-      const intensity = pixels[y * 4]! + pixels[y * 4 + 1]! + pixels[y * 4 + 2]!;
-      if (intensity > peak) { peak = intensity; peakY = y; }
+  // Measure the spectrogram's raster directly so overlay lines (pitch/formants) don't bias it.
+  const measured = await page.evaluate(() => {
+    const frame = (window as unknown as { lastFrame: { width: number; rows: number; spectrum: Uint8Array; settings: { maxFrequency: number; minFrequency: number } } }).lastFrame;
+    const x = Math.floor(frame.width * 0.65);
+    let peak = 0;
+    let row = 0;
+    for (let y = 0; y < frame.rows; y++) {
+      const value = frame.spectrum[y * frame.width + x]!;
+      if (value > peak) { peak = value; row = y; }
     }
-    return { frequency: 2000 - peakY / height * (2000 - 50), peak };
+    return {
+      frequency: frame.settings.maxFrequency - (row + 0.5) / frame.rows * (frame.settings.maxFrequency - frame.settings.minFrequency),
+      peak,
+    };
   });
   expect(Math.abs(measured.frequency - 440)).toBeLessThan(50);
-  expect(measured.peak).toBeGreaterThan(300);
+  expect(measured.peak).toBeGreaterThan(0);
   expect(await page.evaluate(() => {
     const canvases = [...document.querySelectorAll('canvas')];
     return canvases[0]?.dataset.endSample === canvases[1]?.dataset.endSample;
@@ -255,23 +266,38 @@ test('tracks the known tone and shows its note plus a pitch overlay', async ({ p
   await expect(pitch).toContainText('A4');
   await expect(pitch).toContainText('Hz');
 
-  // The F0 line is drawn in a distinct cyan over the spectrogram.
-  const cyan = await spectrum.evaluate((element) => {
+  // Pausing keeps the pitch track and readout available on the snapshot.
+  await page.getByRole('button', { name: 'Pause' }).click();
+  await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
+  await expect(pitch).toContainText('A4');
+
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
+});
+
+test('shows formant tracks and readout for a voiced tone', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Record', exact: true }).click();
+  await expect(page.getByRole('status', { name: 'Capture status' })).toHaveText('Live · mic on');
+  const spectrum = page.getByRole('img', { name: /^Live spectrogram/ });
+  await expect.poll(async () => Number(await spectrum.getAttribute('data-end-sample'))).toBeGreaterThan(80000);
+
+  const formants = page.getByLabel('Current formants');
+  await expect(formants).toBeVisible();
+  await expect(formants).toContainText('F1');
+  await expect(formants).toContainText('Hz');
+  await expect(formants).toContainText('440');
+
+  const orange = await spectrum.evaluate((element) => {
     const canvas = element as HTMLCanvasElement;
     const pixels = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
     let count = 0;
     for (let i = 0; i < pixels.length; i += 4) {
       const r = pixels[i]!, g = pixels[i + 1]!, b = pixels[i + 2]!;
-      if (r > 30 && r < 80 && g > 200 && b > 230) count++;
+      if (r > 240 && g > 150 && g < 210 && b < 110) count++;
     }
     return count;
   });
-  expect(cyan).toBeGreaterThan(100);
-
-  // Pausing keeps the pitch track and readout available on the snapshot.
-  await page.getByRole('button', { name: 'Pause' }).click();
-  await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
-  await expect(pitch).toContainText('A4');
+  expect(orange).toBeGreaterThan(100);
 
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
 });

@@ -1,4 +1,5 @@
 import type { PitchPoint } from '../analysis/pitch';
+import type { FormantPoint } from '../analysis/formants';
 import type { PlotFrame, ViewSettings } from '../analysis/view';
 
 /** Eight reusable blocks bound the audio queue to ~171 ms at 48 kHz. */
@@ -56,5 +57,5 @@ export interface MeterReading {
 export type WorkerReply =
   | { type: 'ready'; sessionId: number }
   | { type: 'meter'; sessionId: number; reading: MeterReading | null }
-  | { type: 'view'; sessionId: number; frame: PlotFrame; pitch: PitchPoint[] }
-  | { type: 'snapshot'; sessionId: number; samples: Float32Array<ArrayBuffer>; sampleRate: number; endSample: number; pitch: PitchPoint[] };
+  | { type: 'view'; sessionId: number; frame: PlotFrame; pitch: PitchPoint[]; formants: FormantPoint[] }
+  | { type: 'snapshot'; sessionId: number; samples: Float32Array<ArrayBuffer>; sampleRate: number; endSample: number; pitch: PitchPoint[]; formants: FormantPoint[] };

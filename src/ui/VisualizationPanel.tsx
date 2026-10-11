@@ -14,6 +14,7 @@ const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 const timeLabel = (seconds: number) => Math.abs(seconds) < 1
   ? `${Number((seconds * 1000).toFixed(2))} ms`
   : `${Number(seconds.toFixed(2))} s`;
+const formatFrequency = (hz?: number) => hz === undefined ? '—' : `${hz.toFixed(0)} Hz`;
 
 interface SpectrumPointer { px: number; py: number; xf: number; yf: number; }
 interface WavePointer { px: number; xf: number; }
@@ -96,7 +97,7 @@ export function VisualizationPanel({ controller, settings, frozen, onFrozenRange
         const sig = `${fz.start}:${fz.end}:${size}:${settingsKey(settings)}`;
         if (sig !== previousFrozenSig) {
           const frame = fz.analysis.renderRange(fz.start, fz.end, settings, width);
-          renderer.draw(spectrum, wave, frame, normalizeView(settings, sampleRate), fz.analysis.pitchRange(fz.start, fz.end));
+          renderer.draw(spectrum, wave, frame, normalizeView(settings, sampleRate), fz.analysis.pitchRange(fz.start, fz.end), fz.analysis.formantRange(fz.start, fz.end));
           frozenFrameRef.current = frame;
           previousFrozenSig = sig;
         }
@@ -104,7 +105,7 @@ export function VisualizationPanel({ controller, settings, frozen, onFrozenRange
         controller.requestView(settings, Math.max(1, spectrum.clientWidth - PLOT_LEFT - PLOT_RIGHT));
         const frame = controller.getView();
         if (frame !== previousFrame || size !== previousSize) {
-          renderer.draw(spectrum, wave, frame, normalizeView(settings, sampleRate), controller.getPitch());
+          renderer.draw(spectrum, wave, frame, normalizeView(settings, sampleRate), controller.getPitch(), controller.getFormants());
           previousFrame = frame;
           previousSize = size;
         }
@@ -244,6 +245,15 @@ export function VisualizationPanel({ controller, settings, frozen, onFrozenRange
   const latestVoiced = pitchPoints.length ? [...pitchPoints].reverse().find((point) => point.voiced) : undefined;
   const pitchReading = latestVoiced ? describePitch(latestVoiced.f0Hz, settings.a4Hz) : null;
 
+  const formantPoints = frozen
+    ? frozen.analysis.formantRange(frozen.start, frozen.end)
+    : status === 'running' ? controller.getFormants() : [];
+  const latestFormants = formantPoints.length
+    ? [...formantPoints].reverse().find((point) => point.formants.length > 0) : undefined;
+  const formantText = latestFormants
+    ? `F1 ${formatFrequency(latestFormants.formants[0])} · F2 ${formatFrequency(latestFormants.formants[1])} · F3 ${formatFrequency(latestFormants.formants[2])}`
+    : null;
+
   return (
     <section className="workspace" aria-label="Live visualization workspace">
       <section className="panel spectrum-panel" aria-labelledby="spectrogram-heading">
@@ -254,6 +264,11 @@ export function VisualizationPanel({ controller, settings, frozen, onFrozenRange
             {pitchReading && (
               <output className="pitch-readout" aria-label="Current pitch">
                 {pitchReading.note} {pitchReading.cents >= 0 ? '↑' : '↓'}{Math.abs(pitchReading.cents).toFixed(0)}¢ · {pitchReading.f0Hz.toFixed(1)} Hz
+              </output>
+            )}
+            {formantText && (
+              <output className="formant-readout" aria-label="Current formants">
+                {formantText}
               </output>
             )}
           </span>

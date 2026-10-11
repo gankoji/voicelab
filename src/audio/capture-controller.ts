@@ -2,6 +2,7 @@ import workletUrl from './capture.worklet?worker&url';
 import { METER_INTERVAL_MS } from './protocol';
 import type { MeterReading, MeterRequest, PipelineInit, SnapshotRequest, ViewRequest, WorkerReply } from './protocol';
 import type { PitchPoint } from '../analysis/pitch';
+import type { FormantPoint } from '../analysis/formants';
 import type { PlotFrame, ViewSettings } from '../analysis/view';
 
 export type CaptureStatus = 'idle' | 'requesting' | 'running' | 'stopped' | 'error';
@@ -66,7 +67,7 @@ interface Session {
   awaitingMeter: boolean;
   awaitingView: boolean;
   lastViewRequest: number;
-  pendingSnapshotResolve?: (snapshot: { samples: Float32Array<ArrayBuffer>; sampleRate: number; endSample: number; pitch: PitchPoint[] }) => void;
+  pendingSnapshotResolve?: (snapshot: { samples: Float32Array<ArrayBuffer>; sampleRate: number; endSample: number; pitch: PitchPoint[]; formants: FormantPoint[] }) => void;
   lastProgress: number;
 }
 
@@ -104,6 +105,7 @@ export class CaptureController {
   private nextId = 0;
   private view: PlotFrame | null = null;
   private pitch: PitchPoint[] = [];
+  private formants: FormantPoint[] = [];
 
   constructor(private readonly environment: CaptureEnvironment = browserEnvironment) {}
 
@@ -114,6 +116,9 @@ export class CaptureController {
 
   /** Pitch points for the most recent view frame, time-aligned to that frame. */
   getPitch = () => this.pitch;
+
+  /** Formant points for the most recent view frame. */
+  getFormants = () => this.formants;
 
   requestView(settings: ViewSettings, width: number) {
     const session = this.session;
@@ -127,7 +132,7 @@ export class CaptureController {
   }
 
   /** Copies the retained audio out of the live worker for an immutable frozen view. */
-  requestSnapshot(): Promise<{ samples: Float32Array<ArrayBuffer>; sampleRate: number; endSample: number; pitch: PitchPoint[] }> {
+  requestSnapshot(): Promise<{ samples: Float32Array<ArrayBuffer>; sampleRate: number; endSample: number; pitch: PitchPoint[]; formants: FormantPoint[] }> {
     const session = this.session;
     if (!session?.worker || this.state.status !== 'running') return Promise.reject(new Error('Capture is not running.'));
     return new Promise((resolve, reject) => {
@@ -187,6 +192,7 @@ export class CaptureController {
     this.stop();
     this.view = null;
     this.pitch = [];
+    this.formants = [];
     const session: Session = {
       id: ++this.nextId, cleanups: [], awaitingMeter: false, lastProgress: performance.now(),
       awaitingView: false, lastViewRequest: -Infinity,
@@ -286,11 +292,13 @@ export class CaptureController {
             if (this.state.status === 'running') {
               this.view = data.frame;
               this.pitch = data.pitch;
+              this.formants = data.formants;
             }
           } else if (data.type === 'snapshot') {
             if (data.sessionId !== session.id) return;
             session.pendingSnapshotResolve?.({
-              samples: data.samples, sampleRate: data.sampleRate, endSample: data.endSample, pitch: data.pitch,
+              samples: data.samples, sampleRate: data.sampleRate, endSample: data.endSample,
+              pitch: data.pitch, formants: data.formants,
             });
             session.pendingSnapshotResolve = undefined;
           }

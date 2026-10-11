@@ -56,6 +56,7 @@ describe('export metadata', () => {
     });
     expect(metadata.settings).toEqual(DEFAULT_VIEW);
     expect(metadata.pitch).toEqual([]);
+    expect(metadata.formants).toEqual([]);
     expect(metadata.format).toMatchObject({ encoding: 'PCM16', channels: 1, byteOrder: 'little-endian' });
   });
 
@@ -72,6 +73,22 @@ describe('export metadata', () => {
     expect(metadata.pitch).toEqual([
       { timeSeconds: 0.05, f0Hz: 220, confidence: 0.9, voiced: true },
       { timeSeconds: 0.1, f0Hz: 0, confidence: 0, voiced: false },
+    ]);
+  });
+
+  it('records formant points with nullable F1–F3', () => {
+    const metadata = buildMetadata({
+      app: 'voice-lab', version: '0.1.0', exportedAt: '2025-01-01T00:00:00.000Z',
+      sampleRate: 48000, startSample: 0, endSample: 9600, sampleCount: 9600,
+      settings: DEFAULT_VIEW,
+      formants: [
+        { sampleIndex: 2400, formants: [700, 1220, 2400], confidence: 0.8 },
+        { sampleIndex: 4800, formants: [720, 1250], confidence: 0.7 },
+      ],
+    });
+    expect(metadata.formants).toEqual([
+      { timeSeconds: 0.05, f1Hz: 700, f2Hz: 1220, f3Hz: 2400, confidence: 0.8 },
+      { timeSeconds: 0.1, f1Hz: 720, f2Hz: 1250, f3Hz: null, confidence: 0.7 },
     ]);
   });
 });

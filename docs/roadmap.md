@@ -108,10 +108,12 @@ FOR-01–03, ANA-01.
 
 - [x] Specify fine-grained formant analysis: finer FFT / longer windows than the
       live spectrogram presets, with the latency/compute tradeoff recorded.
-- [ ] Evaluate LPC-based estimation and alternatives if LPC fails the target cases.
-- [ ] Validate synthetic resonances and licensed annotated reference material.
-- [ ] Track F1–F3 with bandwidth/plausibility checks and temporal association.
-- [ ] Show gaps/uncertainty and explain high-F0 limitations.
+- [x] Implement LPC (downsampled ~12 kHz, Levinson-Durbin, envelope peak-picking)
+      and validate F1–F3 against synthetic all-pole vowels.
+- [x] Track F1–F3 on the spectrogram with a readout, gated on voiced pitch;
+      export timestamped formant estimates.
+- [ ] Bandwidth/plausibility rejection and fuller high-F0/breathiness uncertainty,
+      plus licensed annotated reference singing and real-voice validation.
 
 Exit: supported conditions and error/rejection behavior are documented and
 tested; unreliable estimates are not presented as measured facts.

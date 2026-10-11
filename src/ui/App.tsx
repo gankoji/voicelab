@@ -37,7 +37,7 @@ export function App() {
   const captureSnapshot = async () => {
     const snapshot = await controller.requestSnapshot();
     if (!snapshot || snapshot.samples.length === 0) return null;
-    const analysis = new FrozenAnalysis(snapshot.sampleRate, snapshot.samples, settings.fftSize, snapshot.pitch);
+    const analysis = new FrozenAnalysis(snapshot.sampleRate, snapshot.samples, settings.fftSize, snapshot.pitch, snapshot.formants);
     const end = analysis.displayEnd;
     const start = Math.max(0, end - settings.historySeconds * snapshot.sampleRate);
     return { analysis, start, end } satisfies FrozenView;
@@ -106,6 +106,7 @@ export function App() {
       sampleRate: frozen.analysis.sampleRate,
       startSample: frozen.start, endSample: frozen.end, sampleCount: audio.length,
       settings, pitch: frozen.analysis.pitchRange(frozen.start, frozen.end),
+      formants: frozen.analysis.formantRange(frozen.start, frozen.end),
     });
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
     downloadBlob(new Blob([wav], { type: 'audio/wav' }), `${APP_NAME}-${stamp}.wav`);

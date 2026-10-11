@@ -1,5 +1,6 @@
 import type { ViewSettings } from '../analysis/view';
 import type { PitchPoint } from '../analysis/pitch';
+import type { FormantPoint } from '../analysis/formants';
 
 const WAV_BYTES_PER_SAMPLE = 2;
 const WAV_CHANNELS = 1;
@@ -52,6 +53,7 @@ export interface ExportMetadata {
   sampleCount: number;
   settings: ViewSettings;
   pitch: Array<{ timeSeconds: number; f0Hz: number; confidence: number; voiced: boolean }>;
+  formants: Array<{ timeSeconds: number; f1Hz: number | null; f2Hz: number | null; f3Hz: number | null; confidence: number }>;
   format: { encoding: 'PCM16'; channels: 1; bytesPerSample: 2; byteOrder: 'little-endian' };
 }
 
@@ -65,6 +67,7 @@ export function buildMetadata(input: {
   sampleCount: number;
   settings: ViewSettings;
   pitch?: PitchPoint[];
+  formants?: FormantPoint[];
 }): ExportMetadata {
   const { sampleRate, startSample, endSample } = input;
   return {
@@ -86,6 +89,13 @@ export function buildMetadata(input: {
       f0Hz: point.f0Hz,
       confidence: point.confidence,
       voiced: point.voiced,
+    })),
+    formants: (input.formants ?? []).map((point) => ({
+      timeSeconds: point.sampleIndex / sampleRate,
+      f1Hz: point.formants[0] ?? null,
+      f2Hz: point.formants[1] ?? null,
+      f3Hz: point.formants[2] ?? null,
+      confidence: point.confidence,
     })),
     format: { encoding: 'PCM16', channels: 1, bytesPerSample: 2, byteOrder: 'little-endian' },
   };
