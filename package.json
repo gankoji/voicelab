@@ -18,6 +18,7 @@
     "test:e2e:dev": "playwright test --config playwright.dev.config.ts",
     "test:browsers": "playwright test --config playwright.browsers.config.ts",
     "benchmark:analysis": "node scripts/benchmark-analysis.mjs",
+    "benchmark:pitch": "node scripts/benchmark-pitch.mjs",
     "check:licenses": "node scripts/check-licenses.mjs",
     "soak": "npm run build && node scripts/soak.mjs",
     "check": "npm run test && npm run build && npm run check:licenses"
