@@ -300,3 +300,23 @@ test('exports the paused interval as WAV, PNG, and metadata', async ({ page }) =
   await page.getByRole('button', { name: 'Resume' }).click();
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
 });
+
+test('persists display preferences across reload without restarting capture', async ({ page }) => {
+  await page.goto('/');
+  expect(await page.evaluate(() => (window as unknown as { capturedTracks: MediaStreamTrack[] }).capturedTracks.length)).toBe(0);
+
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByLabel('Visible history').selectOption('5');
+  await page.getByLabel('Frequency scale').selectOption('log');
+  await page.getByLabel('Show RMS amplitude').check();
+  await page.getByRole('button', { name: 'Close settings' }).click();
+
+  await page.reload();
+  await expect(page.getByRole('status', { name: 'Capture status' })).toHaveText('Ready');
+  expect(await page.evaluate(() => (window as unknown as { capturedTracks: MediaStreamTrack[] }).capturedTracks.length)).toBe(0);
+
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(page.getByLabel('Visible history')).toHaveValue('5');
+  await expect(page.getByLabel('Frequency scale')).toHaveValue('log');
+  await expect(page.getByLabel('Show RMS amplitude')).toBeChecked();
+});

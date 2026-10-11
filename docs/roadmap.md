@@ -54,8 +54,9 @@ INS-01–02, EXP-01–02, SET-01, ACC-01.
       pan), re-analyzed from copied raw audio; also retained after recording stops.
 - [x] WAV audio, a settings/analysis JSON sidecar, and a composite PNG image
       export of the paused or stopped interval.
-- [ ] Preference persistence, keyboard navigation, numeric readouts, and
-      alternate color palettes.
+- [x] Local persistence of display settings and the chosen input device, with
+      no audio or microphone consent ever stored.
+- [ ] Keyboard navigation/numeric readouts and alternate color palettes.
 
 Exit: a singer can start, sing, pause, inspect, export, and stop unaided.
 Current pause/inspection/export behavior is recorded in

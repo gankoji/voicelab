@@ -1,11 +1,11 @@
-import { useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { CaptureController } from '../audio/capture-controller';
-import { DEFAULT_VIEW } from '../analysis/view';
 import type { ViewSettings } from '../analysis/view';
 import { FrozenAnalysis } from '../analysis/frozen-analysis';
 import { buildMetadata, downloadBlob, encodeWav } from '../export/export';
 import { encodePlotPng } from '../export/image';
 import { APP_NAME, APP_VERSION } from '../app-meta';
+import { loadPreferences, savePreferences } from '../settings/preferences';
 import { MicrophonePanel } from './MicrophonePanel';
 import { VisualizationPanel } from './VisualizationPanel';
 import { DisplaySettings } from './DisplaySettings';
@@ -19,13 +19,20 @@ export interface FrozenView {
 export function App() {
   const [controller] = useState(() => new CaptureController());
   const capture = useSyncExternalStore(controller.subscribe, controller.getSnapshot);
-  const [settings, setSettings] = useState<ViewSettings>(DEFAULT_VIEW);
+  const [initialPreferences] = useState(() => loadPreferences(window.localStorage));
+  const [settings, setSettings] = useState<ViewSettings>(initialPreferences.settings);
+  const [deviceId, setDeviceId] = useState<string>(initialPreferences.deviceId);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [frozen, setFrozen] = useState<FrozenView | null>(null);
   const [pausePending, setPausePending] = useState(false);
   const pauseLock = useRef(false);
   const spectralCanvas = useRef<HTMLCanvasElement | null>(null);
   const waveCanvas = useRef<HTMLCanvasElement | null>(null);
+
+  // Persist preferences only; never audio or microphone consent.
+  useEffect(() => {
+    savePreferences({ settings, deviceId }, window.localStorage);
+  }, [settings, deviceId]);
 
   const captureSnapshot = async () => {
     const snapshot = await controller.requestSnapshot();
@@ -131,6 +138,8 @@ export function App() {
         onSettingsChange={setSettingsOpen}
         frozen={frozen !== null}
         pausePending={pausePending}
+        deviceId={deviceId}
+        onDeviceChange={setDeviceId}
         onPauseToggle={() => void togglePause()}
         onStop={() => void stopRecording()}
         onRecord={startRecording}

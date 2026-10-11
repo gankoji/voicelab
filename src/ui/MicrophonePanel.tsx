@@ -20,12 +20,14 @@ function processingLabel(value: boolean | string | undefined) {
   return value === undefined ? 'Unknown' : value ? 'On' : 'Off';
 }
 
-export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, frozen, pausePending, onPauseToggle, onStop, onRecord, onExport, children }: {
+export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, frozen, pausePending, deviceId, onDeviceChange, onPauseToggle, onStop, onRecord, onExport, children }: {
   controller: CaptureController;
   settingsOpen: boolean;
   onSettingsChange: (open: boolean) => void;
   frozen: boolean;
   pausePending: boolean;
+  deviceId: string;
+  onDeviceChange: (deviceId: string) => void;
   onPauseToggle: () => void;
   onStop: () => void;
   onRecord: (deviceId: string) => void;
@@ -34,7 +36,6 @@ export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, fr
 }) {
   const capture = useSyncExternalStore(controller.subscribe, controller.getSnapshot);
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
-  const [deviceId, setDeviceId] = useState('');
   const [deviceError, setDeviceError] = useState('');
   const active = capture.status === 'requesting' || capture.status === 'running';
   const settingsButton = useRef<HTMLButtonElement>(null);
@@ -86,7 +87,7 @@ export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, fr
         setDevices(available);
         setDeviceError('');
         if (deviceId && !available.some((device) => device.deviceId === deviceId)) {
-          setDeviceId('');
+          onDeviceChange('');
           if (active) controller.stop('The selected input is no longer available. Choose an input and start again.');
         }
       } catch {
@@ -99,7 +100,7 @@ export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, fr
       cancelled = true;
       mediaDevices.removeEventListener('devicechange', refresh);
     };
-  }, [active, capture.status, controller, deviceId]);
+  }, [active, capture.status, controller, deviceId, onDeviceChange]);
 
   const reading = capture.reading;
   const settings = capture.details?.trackSettings;
@@ -191,7 +192,7 @@ export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, fr
           <select id="microphone-input" value={deviceId} disabled={capture.status === 'requesting'}
             onChange={(event) => {
               if (active) controller.stop('Input changed. Press Record to use it.');
-              setDeviceId(event.target.value);
+              onDeviceChange(event.target.value);
             }}>
             <option value="">Default input</option>
             {devices.filter((device) => device.deviceId && device.deviceId !== 'default').map((device, index) => (

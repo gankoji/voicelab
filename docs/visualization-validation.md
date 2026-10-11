@@ -25,7 +25,10 @@
   interval as 16-bit PCM WAV, a composite PNG of the two plots, and a companion
   JSON with time alignment, sample rate, and the applied display/analysis settings.
 
-Saved preferences, alternate palettes, pitch, and formants remain future work.
+Saved display settings and the chosen input device persist in localStorage and
+are restored on reload, without re-enabling capture or storing audio/consent.
+Alternate color palettes, keyboard-only inspection, pitch, and formants remain
+future work.
 
 ## Signal-processing contract
 
