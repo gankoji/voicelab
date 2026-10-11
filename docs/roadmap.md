@@ -87,11 +87,16 @@ Evidence and procedures: [release hardening](release-hardening.md).
 
 PIT-01–03, ANA-01.
 
-- Compare candidate trackers on tones, missing fundamentals, singing, noise,
-  vibrato, slides, and voiced/unvoiced transitions.
-- Select supported pitch range and measured accuracy/latency thresholds.
-- Hz and confidence, spectrogram overlay, 12TET note/octave/cents, A4 tuning.
-- Versioned analysis export and explicit invalid frames.
+- [x] Implemented YIN with an absolute-threshold valley-minimum refinement, plus
+      a streaming tracker that emits voiced/unvoiced points without bridging gaps.
+- [x] 12TET note/octave/cents conversion with an adjustable A4 reference;
+      scientific-pitch octave convention (MIDI 60 = C4).
+- [x] Live spectrogram F0 overlay and a note/cents/Hz readout, gated by confidence.
+- [x] Synthetic fixtures: tones, missing fundamental, silence/noise, vibrato,
+      discontinuities, and reference-agnostic 12TET boundaries.
+- [ ] Benchmark against McLeod pitch detection on singing material.
+- [ ] Timestamped pitch data in exports and a frozen-snapshot pitch overlay.
+- [ ] Real-voice accuracy/latency/vibrato validation on published hardware.
 
 Exit: published validation shows useful singing performance without hiding
 uncertainty or smoothing away expressive pitch changes.

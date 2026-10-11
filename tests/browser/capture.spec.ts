@@ -243,6 +243,34 @@ test('zooms and pans a paused snapshot without stopping capture', async ({ page 
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
 });
 
+test('tracks the known tone and shows its note plus a pitch overlay', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Record', exact: true }).click();
+  await expect(page.getByRole('status', { name: 'Capture status' })).toHaveText('Live · mic on');
+  const spectrum = page.getByRole('img', { name: /^Live spectrogram/ });
+  await expect.poll(async () => Number(await spectrum.getAttribute('data-end-sample'))).toBeGreaterThan(120000);
+
+  const pitch = page.getByLabel('Current pitch');
+  await expect(pitch).toBeVisible();
+  await expect(pitch).toContainText('A4');
+  await expect(pitch).toContainText('Hz');
+
+  // The F0 line is drawn in a distinct cyan over the spectrogram.
+  const cyan = await spectrum.evaluate((element) => {
+    const canvas = element as HTMLCanvasElement;
+    const pixels = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
+    let count = 0;
+    for (let i = 0; i < pixels.length; i += 4) {
+      const r = pixels[i]!, g = pixels[i + 1]!, b = pixels[i + 2]!;
+      if (r > 30 && r < 80 && g > 200 && b > 230) count++;
+    }
+    return count;
+  });
+  expect(cyan).toBeGreaterThan(100);
+
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
+});
+
 test('stopping recording leaves a zoomable, pannable snapshot', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Record', exact: true }).click();

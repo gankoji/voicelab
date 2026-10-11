@@ -1,5 +1,6 @@
 import { frequencyFraction } from '../analysis/view';
 import type { PlotFrame, ViewSettings } from '../analysis/view';
+import type { PitchPoint } from '../analysis/pitch';
 import { PALETTES } from './palette';
 import { computeWaveformScale } from './scale';
 
@@ -50,7 +51,7 @@ export class PlotRenderer {
   private rasterCanvas = document.createElement('canvas');
   private image: ImageData | undefined;
 
-  draw(spectrogram: HTMLCanvasElement, waveform: HTMLCanvasElement, frame: PlotFrame | null, fallback: ViewSettings) {
+  draw(spectrogram: HTMLCanvasElement, waveform: HTMLCanvasElement, frame: PlotFrame | null, fallback: ViewSettings, pitch: PitchPoint[] = []) {
     const spectral = prepare(spectrogram);
     const wave = prepare(waveform);
     if (!spectral || !wave) return;
@@ -80,6 +81,7 @@ export class PlotRenderer {
       spectral.context.imageSmoothingEnabled = false;
       spectral.context.drawImage(this.rasterCanvas, PLOT_LEFT, PLOT_TOP, spectral.plotWidth, spectral.plotHeight);
       this.drawWave(wave.context, wave.plotWidth, wave.plotHeight, frame, waveScale.gain);
+      if (pitch.length) this.drawPitch(spectral.context, spectral.plotWidth, spectral.plotHeight, frame, pitch);
     } else {
       for (const plot of [spectral, wave]) {
         plot.context.fillStyle = '#bdd0d7';
@@ -183,6 +185,27 @@ export class PlotRenderer {
       }
       context.stroke();
     }
+    context.restore();
+  }
+
+  private drawPitch(context: CanvasRenderingContext2D, width: number, height: number, frame: PlotFrame, pitch: PitchPoint[]) {
+    context.save();
+    context.beginPath();
+    context.rect(PLOT_LEFT, PLOT_TOP, width, height);
+    context.clip();
+    context.strokeStyle = '#2ee6ff';
+    context.lineWidth = 2;
+    context.beginPath();
+    let connected = false;
+    for (const point of pitch) {
+      if (!point.voiced) { connected = false; continue; }
+      const x = PLOT_LEFT + (point.sampleIndex - frame.startSample) / (frame.endSample - frame.startSample) * width;
+      const y = PLOT_TOP + (1 - frequencyFraction(point.f0Hz, frame.settings)) * height;
+      if (connected) context.lineTo(x, y);
+      else context.moveTo(x, y);
+      connected = true;
+    }
+    context.stroke();
     context.restore();
   }
 }

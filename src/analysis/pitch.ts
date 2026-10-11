@@ -4,6 +4,14 @@ export interface PitchEstimate {
   confidence: number;
 }
 
+export interface PitchPoint {
+  /** Center sample of the analysis window within the stream. */
+  sampleIndex: number;
+  f0Hz: number;
+  confidence: number;
+  voiced: boolean;
+}
+
 export interface PitchOptions {
   sampleRate: number;
   minFrequency?: number;

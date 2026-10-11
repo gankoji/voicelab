@@ -61,6 +61,11 @@ export function DisplaySettings({ controller, settings, onChange, frozen }: {
             <option value={4096}>Frequency · 4096 samples</option>
           </select>
         </label>
+        <label>Tuning reference (A4)
+          <select value={settings.a4Hz} onChange={(e) => update({ a4Hz: Number(e.target.value) })}>
+            {[415, 432, 440, 442, 444].map((value) => <option key={value} value={value}>{value} Hz</option>)}
+          </select>
+        </label>
         <label>Color floor (dBFS)
           <select value={settings.floorDb} onChange={(e) => update({ floorDb: Number(e.target.value) })}>
             {[-120, -90, -60].map((value) => <option key={value} value={value}>{value}</option>)}

@@ -17,12 +17,13 @@ export interface ViewSettings {
   showRms: boolean;
   autoWaveformGain: boolean;
   palette: PaletteName;
+  a4Hz: number;
 }
 
 export const DEFAULT_VIEW: ViewSettings = {
   historySeconds: 10, minFrequency: 50, maxFrequency: 10000,
   frequencyScale: 'linear', fftSize: 2048, floorDb: -90, ceilingDb: 0, showRms: false,
-  autoWaveformGain: true, palette: 'viridis',
+  autoWaveformGain: true, palette: 'viridis', a4Hz: 440,
 };
 
 function clamp(value: number, min: number, max: number, fallback: number) {
@@ -43,6 +44,7 @@ export function normalizeView(settings: ViewSettings, sampleRate: number): ViewS
     showRms: Boolean(settings.showRms),
     autoWaveformGain: Boolean(settings.autoWaveformGain),
     palette: PALETTE_NAMES.some((name) => name === settings.palette) ? settings.palette : 'viridis',
+    a4Hz: clamp(settings.a4Hz, 300, 500, 440),
   };
 }
 

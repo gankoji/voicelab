@@ -1,6 +1,7 @@
 import workletUrl from './capture.worklet?worker&url';
 import { METER_INTERVAL_MS } from './protocol';
 import type { MeterReading, MeterRequest, PipelineInit, SnapshotRequest, ViewRequest, WorkerReply } from './protocol';
+import type { PitchPoint } from '../analysis/pitch';
 import type { PlotFrame, ViewSettings } from '../analysis/view';
 
 export type CaptureStatus = 'idle' | 'requesting' | 'running' | 'stopped' | 'error';
@@ -102,6 +103,7 @@ export class CaptureController {
   private session: Session | undefined;
   private nextId = 0;
   private view: PlotFrame | null = null;
+  private pitch: PitchPoint[] = [];
 
   constructor(private readonly environment: CaptureEnvironment = browserEnvironment) {}
 
@@ -109,6 +111,9 @@ export class CaptureController {
 
   /** High-frequency plot data stays outside React state. Both canvases read one frame. */
   getView = () => this.view;
+
+  /** Pitch points for the most recent view frame, time-aligned to that frame. */
+  getPitch = () => this.pitch;
 
   requestView(settings: ViewSettings, width: number) {
     const session = this.session;
@@ -181,6 +186,7 @@ export class CaptureController {
   async start(deviceId = ''): Promise<void> {
     this.stop();
     this.view = null;
+    this.pitch = [];
     const session: Session = {
       id: ++this.nextId, cleanups: [], awaitingMeter: false, lastProgress: performance.now(),
       awaitingView: false, lastViewRequest: -Infinity,
@@ -277,7 +283,10 @@ export class CaptureController {
             }
           } else if (data.type === 'view') {
             session.awaitingView = false;
-            if (this.state.status === 'running') this.view = data.frame;
+            if (this.state.status === 'running') {
+              this.view = data.frame;
+              this.pitch = data.pitch;
+            }
           } else if (data.type === 'snapshot') {
             if (data.sessionId !== session.id) return;
             session.pendingSnapshotResolve?.({

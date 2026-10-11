@@ -8,6 +8,7 @@ import type { FrozenView } from './App';
 import { PALETTES } from '../visualization/palette';
 import { PLOT_LEFT, PLOT_RIGHT, PLOT_TOP, PLOT_BOTTOM, PlotRenderer } from '../visualization/plots';
 import { inspectSpectrum, inspectWaveform } from '../visualization/inspection';
+import { describePitch } from '../analysis/midi';
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 const timeLabel = (seconds: number) => Math.abs(seconds) < 1
@@ -103,7 +104,7 @@ export function VisualizationPanel({ controller, settings, frozen, onFrozenRange
         controller.requestView(settings, Math.max(1, spectrum.clientWidth - PLOT_LEFT - PLOT_RIGHT));
         const frame = controller.getView();
         if (frame !== previousFrame || size !== previousSize) {
-          renderer.draw(spectrum, wave, frame, normalizeView(settings, sampleRate));
+          renderer.draw(spectrum, wave, frame, normalizeView(settings, sampleRate), controller.getPitch());
           previousFrame = frame;
           previousSize = size;
         }
@@ -237,12 +238,23 @@ export function VisualizationPanel({ controller, settings, frozen, onFrozenRange
   const waveReading = frozenFrameRef.current && waveInspect
     ? inspectWaveform(frozenFrameRef.current, waveInspect.xf) : null;
 
+  const livePitch = !frozen && status === 'running' ? controller.getPitch() : [];
+  const latestVoiced = livePitch.length ? [...livePitch].reverse().find((point) => point.voiced) : undefined;
+  const pitchReading = latestVoiced ? describePitch(latestVoiced.f0Hz, settings.a4Hz) : null;
+
   return (
     <section className="workspace" aria-label="Live visualization workspace">
       <section className="panel spectrum-panel" aria-labelledby="spectrogram-heading">
         <div className="panel-heading">
           <h2 id="spectrogram-heading">Spectrogram</h2>
-          <span>{frozen ? 'Paused — scroll to zoom, drag to pan' : `${stateLabel} · frequency in Hz`}</span>
+          <span className="heading-meta">
+            <span>{frozen ? 'Paused — scroll to zoom, drag to pan' : `${stateLabel} · frequency in Hz`}</span>
+            {!frozen && pitchReading && (
+              <output className="pitch-readout" aria-label="Current pitch">
+                {pitchReading.note} {pitchReading.cents >= 0 ? '↑' : '↓'}{Math.abs(pitchReading.cents).toFixed(0)}¢ · {pitchReading.f0Hz.toFixed(1)} Hz
+              </output>
+            )}
+          </span>
         </div>
         <div className="canvas-frame">
           <canvas
