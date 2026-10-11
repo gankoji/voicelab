@@ -1,4 +1,6 @@
+import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
+import type { Download } from '@playwright/test';
 
 // Observe real browser tracks without replacing capture or the audio pipeline.
 test.beforeEach(async ({ page }) => {
@@ -258,4 +260,39 @@ test('stopping recording leaves a zoomable, pannable snapshot', async ({ page })
   await spectrum.hover();
   await page.mouse.wheel(0, -240);
   await expect.poll(async () => Number(await spectrum.getAttribute('data-end-sample'))).toBeLessThan(originalEnd);
+});
+
+test('exports the paused interval as WAV and metadata', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Record', exact: true }).click();
+  await expect(page.getByRole('status', { name: 'Capture status' })).toHaveText('Live · mic on');
+  const spectrum = page.getByRole('img', { name: /^Live spectrogram/ });
+  await expect.poll(async () => Number(await spectrum.getAttribute('data-end-sample'))).toBeGreaterThan(60000);
+
+  await page.getByRole('button', { name: 'Pause' }).click();
+  await expect(page.getByRole('button', { name: 'Export' })).toBeEnabled();
+
+  const downloads: Download[] = [];
+  page.on('download', (download) => downloads.push(download));
+  await page.getByRole('button', { name: 'Export' }).click();
+  await expect.poll(() => downloads.length).toBe(2);
+
+  const wav = downloads.find((download) => download.suggestedFilename().endsWith('.wav'));
+  const json = downloads.find((download) => download.suggestedFilename().endsWith('.json'));
+  if (!wav || !json) throw new Error('Expected both WAV and JSON downloads');
+
+  const wavBytes = await readFile(await wav.path());
+  expect(wavBytes.subarray(0, 4).toString('ascii')).toBe('RIFF');
+  expect(wavBytes.subarray(8, 12).toString('ascii')).toBe('WAVE');
+  // Sample rate (mid-file) is little-endian at bytes 24..27.
+  expect(wavBytes.readUInt32LE(24)).toBe(48000);
+
+  const metadata = JSON.parse((await readFile(await json.path())).toString('utf8'));
+  expect(metadata.app).toBe('voice-lab');
+  expect(metadata.sampleRate).toBe(48000);
+  expect(metadata.range.durationSeconds).toBeGreaterThan(0);
+  expect(metadata.settings).toBeTruthy();
+
+  await page.getByRole('button', { name: 'Resume' }).click();
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
 });

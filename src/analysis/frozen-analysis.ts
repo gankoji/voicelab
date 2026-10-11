@@ -30,6 +30,14 @@ export class FrozenAnalysis {
     return this.audio.endSample;
   }
 
+  /** A copy of samples in `[start, end)` within the snapshot; NaN gaps are preserved. */
+  slice(start: number, end: number): Float32Array {
+    const s = Math.max(0, Math.round(start));
+    const e = Math.min(this.snapshot.length, Math.round(end));
+    if (e <= s) return new Float32Array(0);
+    return this.snapshot.slice(s, e);
+  }
+
   /** Rightmost sample whose analysis window is complete (aligned with the live view). */
   get displayEnd() {
     return Math.max(0, this.audio.endSample - this.stft.size / 2);

@@ -3,6 +3,8 @@ import { CaptureController } from '../audio/capture-controller';
 import { DEFAULT_VIEW } from '../analysis/view';
 import type { ViewSettings } from '../analysis/view';
 import { FrozenAnalysis } from '../analysis/frozen-analysis';
+import { buildMetadata, downloadBlob, encodeWav } from '../export/export';
+import { APP_NAME, APP_VERSION } from '../app-meta';
 import { MicrophonePanel } from './MicrophonePanel';
 import { VisualizationPanel } from './VisualizationPanel';
 import { DisplaySettings } from './DisplaySettings';
@@ -86,6 +88,21 @@ export function App() {
     void controller.start(deviceId);
   };
 
+  const exportSnapshot = () => {
+    if (!frozen) return;
+    const audio = frozen.analysis.slice(frozen.start, frozen.end);
+    const wav = encodeWav(audio, frozen.analysis.sampleRate);
+    const metadata = buildMetadata({
+      app: APP_NAME, version: APP_VERSION, exportedAt: new Date().toISOString(),
+      sampleRate: frozen.analysis.sampleRate,
+      startSample: frozen.start, endSample: frozen.end, sampleCount: audio.length,
+      settings,
+    });
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    downloadBlob(new Blob([wav], { type: 'audio/wav' }), `${APP_NAME}-${stamp}.wav`);
+    downloadBlob(new Blob([JSON.stringify(metadata, null, 2)], { type: 'application/json' }), `${APP_NAME}-${stamp}.json`);
+  };
+
   const headerText = frozen
     ? (capture.status === 'running' ? 'Paused · live capture continues' : 'Paused · recording stopped')
     : 'Live voice analysis';
@@ -106,6 +123,7 @@ export function App() {
         onPauseToggle={() => void togglePause()}
         onStop={() => void stopRecording()}
         onRecord={startRecording}
+        onExport={exportSnapshot}
       >
         <DisplaySettings controller={controller} settings={settings} onChange={handleSettingsChange} frozen={frozen !== null} />
       </MicrophonePanel>
@@ -119,7 +137,7 @@ export function App() {
 
       <footer>
         <span>Audio stays on this device. Nothing is saved.</span>
-        <span>Live analysis only · exports coming later</span>
+        <span>Pause or stop to export WAV and settings</span>
       </footer>
     </main>
   );

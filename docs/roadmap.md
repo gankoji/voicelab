@@ -52,12 +52,14 @@ INS-01–02, EXP-01–02, SET-01, ACC-01.
       spectrogram, time + min/max amplitude on the waveform.
 - [x] Zoom/pan an immutable retained-history snapshot (scroll to zoom, drag to
       pan), re-analyzed from copied raw audio; also retained after recording stops.
-- [ ] WAV, plot image, and settings export from an explicit interval.
-- [ ] Preference persistence, keyboard navigation, numeric readouts, color options.
+- [x] WAV audio and a settings/analysis JSON export of the paused or stopped
+      interval.
+- [ ] Plot image export, preference persistence, keyboard navigation, numeric
+      readouts, and alternate color palettes.
 
-Exit: a singer can start, sing, freeze, inspect, export, and stop unaided.
-Current freeze/inspection is recorded in
-[visualization validation](visualization-validation.md); full zoom/export remains.
+Exit: a singer can start, sing, pause, inspect, export, and stop unaided.
+Current pause/inspection/export behavior is recorded in
+[visualization validation](visualization-validation.md).
 
 ## Phase 1D — release hardening and browser reach
 

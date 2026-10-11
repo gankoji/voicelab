@@ -21,9 +21,12 @@
 - Paused zoom/pan: scroll zooms around the cursor and dragging pans within the
   copied raw-audio snapshot; the view is re-analyzed from that snapshot, not the
   original rendered raster. The same snapshot remains inspectable after Stop.
+- Export: a pause or stop leaves an explicit interval; Export downloads that
+  interval as 16-bit PCM WAV plus a companion JSON with time alignment, sample
+  rate, and the applied display/analysis settings.
 
-Exports, saved preferences, alternate palettes, pitch, and formants remain
-future work.
+Plot-image export, saved preferences, alternate palettes, pitch, and formants
+remain future work.
 
 ## Signal-processing contract
 

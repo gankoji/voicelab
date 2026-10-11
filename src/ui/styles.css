@@ -64,6 +64,7 @@ button:hover { background: #e3ece8; border-color: #8ba79c; }
 .freeze-button { min-width: 0; }
 .freeze-icon { display: block; width: 10px; height: 13px; border-left: 3px solid #175963; border-right: 3px solid #175963; }
 .freeze-button.is-frozen { background: #eaf1f7; border-color: #7fb0d2; }
+.export-button[disabled] { background: #fff; }
 button:disabled { opacity: 0.5; cursor: default; }
 button:disabled:hover { background: #fff; border-color: #bdceca; }
 .settings-button[aria-expanded="true"] { background: #dae9e3; }
@@ -131,7 +132,8 @@ footer { grid-area: footer; display: flex; flex-wrap: wrap; justify-content: spa
   .freeze-button { grid-column: 2; grid-row: 1; }
   .capture-indicator { grid-column: 3; grid-row: 1; font-size: 0.7rem; }
   .settings-button { grid-column: 4; grid-row: 1; }
-  .meters { grid-column: 1 / -1; grid-row: 2; display: flex; width: 100%; gap: 16px; }
+  .export-button { grid-column: 4; grid-row: 2; }
+  .meters { grid-column: 1 / 4; grid-row: 2; display: flex; width: 100%; gap: 12px; justify-content: flex-end; }
   .level-row { flex: 1; min-width: 0; grid-template-columns: 26px minmax(0, 1fr) 60px; gap: 4px; font-size: 0.65rem; }
   .panel-heading { padding: 7px 10px; }
   .panel-heading span { font-size: 0.6rem; }

@@ -20,7 +20,7 @@ function processingLabel(value: boolean | string | undefined) {
   return value === undefined ? 'Unknown' : value ? 'On' : 'Off';
 }
 
-export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, frozen, pausePending, onPauseToggle, onStop, onRecord, children }: {
+export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, frozen, pausePending, onPauseToggle, onStop, onRecord, onExport, children }: {
   controller: CaptureController;
   settingsOpen: boolean;
   onSettingsChange: (open: boolean) => void;
@@ -29,6 +29,7 @@ export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, fr
   onPauseToggle: () => void;
   onStop: () => void;
   onRecord: (deviceId: string) => void;
+  onExport: () => void;
   children: ReactNode;
 }) {
   const capture = useSyncExternalStore(controller.subscribe, controller.getSnapshot);
@@ -160,6 +161,15 @@ export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, fr
               <circle cx="15" cy="17" r="3" fill="currentColor" />
             </svg>
             Settings
+          </button>
+          <button type="button" className="export-button"
+            title={frozen ? 'Export the paused interval as WAV and settings' : 'Pause or stop to export the interval'}
+            disabled={!frozen}
+            onClick={onExport}>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+              <path d="M12 4v11M7 10l5 5 5-5M4 19h16" />
+            </svg>
+            Export
           </button>
         </div>
         {showNotice && <p role={capture.status === 'error' ? 'alert' : 'status'} className="capture-message">{capture.message}</p>}

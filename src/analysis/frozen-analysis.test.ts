@@ -41,6 +41,14 @@ describe('frozen re-analysis', () => {
     const frame = analysis.renderRange(1000, 1500, DEFAULT_VIEW, 500);
     expect(frame.trace).toHaveLength(500);
   });
+
+  it('slices an explicit interval for export', () => {
+    const analysis = new FrozenAnalysis(sampleRate, samples, 2048);
+    const slice = analysis.slice(480, 960);
+    expect(slice).toHaveLength(480);
+    expect(slice[0]).toBeCloseTo(0.25 * Math.sin(2 * Math.PI * 440 * 480 / sampleRate), 4);
+    expect(analysis.slice(100, 100)).toHaveLength(0);
+  });
 });
 
 describe('frozen range clamping', () => {
