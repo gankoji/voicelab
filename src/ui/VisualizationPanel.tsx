@@ -14,7 +14,7 @@ const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 const timeLabel = (seconds: number) => Math.abs(seconds) < 1
   ? `${Number((seconds * 1000).toFixed(2))} ms`
   : `${Number(seconds.toFixed(2))} s`;
-const formatFrequency = (hz?: number) => hz === undefined ? '—' : `${hz.toFixed(0)} Hz`;
+const formatFrequency = (hz?: number) => hz === undefined || !Number.isFinite(hz) ? '—' : `${hz.toFixed(0)} Hz`;
 
 interface SpectrumPointer { px: number; py: number; xf: number; yf: number; }
 interface WavePointer { px: number; xf: number; }

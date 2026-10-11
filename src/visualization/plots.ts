@@ -224,7 +224,7 @@ export class PlotRenderer {
       let connected = false;
       for (const point of formants) {
         const frequency = point.formants[index];
-        if (frequency === undefined) { connected = false; continue; }
+        if (frequency === undefined || !Number.isFinite(frequency)) { connected = false; continue; }
         const x = PLOT_LEFT + (point.sampleIndex - frame.startSample) / (frame.endSample - frame.startSample) * width;
         const y = PLOT_TOP + (1 - frequencyFraction(frequency, frame.settings)) * height;
         if (connected) context.lineTo(x, y);

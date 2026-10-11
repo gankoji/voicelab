@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FormantHistory, FormantTracker } from './formant-tracker';
+import { FormantHistory, FormantSmoother, FormantTracker } from './formant-tracker';
 import type { FormantPoint } from './formants';
 
 const SAMPLE_RATE = 48000;
@@ -61,7 +61,23 @@ describe('FormantTracker', () => {
     const tracker = new FormantTracker((point) => points.push(point), () => false, { sampleRate: SAMPLE_RATE });
     tracker.ingest(new Float32Array(SAMPLE_RATE), 0);
     expect(points.length).toBeGreaterThan(0);
-    expect(points.every((point) => point.formants.length === 0)).toBe(true);
+    expect(points.every((point) => point.formants.every((f) => !Number.isFinite(f)))).toBe(true);
+  });
+});
+
+describe('FormantSmoother', () => {
+  it('smooths a candidate jump instead of snapping, and holds through brief gaps', () => {
+    const smoother = new FormantSmoother();
+    expect(smoother.update([700, 1220, 2400])).toEqual([700, 1220, 2400]);
+
+    const jumped = smoother.update([900, 1220, 2400]);
+    expect(jumped[0]).toBeCloseTo(760, 6); // 0.3 of the way, not a full snap
+    expect(jumped[1]).toBeCloseTo(1220, 6);
+    expect(jumped[2]).toBeCloseTo(2400, 6);
+
+    const onlyF2F3 = [1220, 2400];
+    for (let i = 0; i < 3; i++) smoother.update(onlyF2F3);
+    expect(Number.isFinite(smoother.update(onlyF2F3)[0])).toBe(false); // gaps after the hold
   });
 });
 

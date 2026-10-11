@@ -5,6 +5,10 @@ import type { FormantPoint } from '../analysis/formants';
 const WAV_BYTES_PER_SAMPLE = 2;
 const WAV_CHANNELS = 1;
 
+function nullable(value: number | undefined): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
 function writeAscii(view: DataView, offset: number, text: string) {
   for (let i = 0; i < text.length; i++) view.setUint8(offset + i, text.charCodeAt(i));
 }
@@ -92,9 +96,9 @@ export function buildMetadata(input: {
     })),
     formants: (input.formants ?? []).map((point) => ({
       timeSeconds: point.sampleIndex / sampleRate,
-      f1Hz: point.formants[0] ?? null,
-      f2Hz: point.formants[1] ?? null,
-      f3Hz: point.formants[2] ?? null,
+      f1Hz: nullable(point.formants[0]),
+      f2Hz: nullable(point.formants[1]),
+      f3Hz: nullable(point.formants[2]),
       confidence: point.confidence,
     })),
     format: { encoding: 'PCM16', channels: 1, bytesPerSample: 2, byteOrder: 'little-endian' },
