@@ -72,6 +72,10 @@ export function DisplaySettings({ controller, settings, onChange }: {
           <input type="checkbox" checked={settings.showRms} onChange={(e) => update({ showRms: e.target.checked })} />
           Show RMS amplitude
         </label>
+        <label className="checkbox-control">
+          <input type="checkbox" checked={settings.autoWaveformGain} onChange={(e) => update({ autoWaveformGain: e.target.checked })} />
+          Auto-fit waveform amplitude
+        </label>
       </fieldset>
       <details className="analysis-notes">
         <summary>How to read the plots</summary>
@@ -87,7 +91,10 @@ export function DisplaySettings({ controller, settings, onChange }: {
         </p>
         <p className="capture-note">
           The waveform shows min/max at overview scale and individual samples at fine zoom.
-          The optional yellow line is centered 20 ms RMS on the same linear amplitude scale.
+          When “Auto-fit waveform amplitude” is on, the vertical axis scales to the loudest
+          sample in the visible window (up to 100×, never below a -60 dBFS floor) so quiet
+          signals stay readable; the input meter remains your dBFS reference. The optional
+          yellow line is centered 20 ms RMS on the same scale.
           Both plots share sample-based time; 0 is the latest displayed sample,
           delayed by half an analysis window to align with the spectrum.
         </p>

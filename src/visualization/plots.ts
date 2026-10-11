@@ -1,6 +1,7 @@
 import { frequencyFraction } from '../analysis/view';
 import type { PlotFrame, ViewSettings } from '../analysis/view';
 import { PALETTE } from './palette';
+import { computeWaveformScale } from './scale';
 
 export const PLOT_LEFT = 54;
 export const PLOT_RIGHT = 12;
@@ -35,6 +36,16 @@ function timeAxis(context: CanvasRenderingContext2D, width: number, height: numb
   }
 }
 
+function formatAmplitude(value: number) {
+  const magnitude = Math.abs(value);
+  if (magnitude === 0) return '0';
+  if (magnitude >= 0.1) return value.toFixed(1);
+  if (magnitude >= 0.01) return value.toFixed(2);
+  if (magnitude >= 0.001) return value.toFixed(3);
+  if (magnitude >= 0.0001) return value.toFixed(4);
+  return value.toExponential(1);
+}
+
 export class PlotRenderer {
   private rasterCanvas = document.createElement('canvas');
   private image: ImageData | undefined;
@@ -44,6 +55,9 @@ export class PlotRenderer {
     const wave = prepare(waveform);
     if (!spectral || !wave) return;
     const settings = frame?.settings ?? fallback;
+    const waveScale = frame
+      ? computeWaveformScale(frame, frame.settings.autoWaveformGain)
+      : { gain: 1, maxAmplitude: 1 };
 
     if (frame) {
       if (this.rasterCanvas.width !== frame.width || this.rasterCanvas.height !== frame.rows) {
@@ -64,7 +78,7 @@ export class PlotRenderer {
       rasterContext.putImageData(this.image, 0, 0);
       spectral.context.imageSmoothingEnabled = false;
       spectral.context.drawImage(this.rasterCanvas, PLOT_LEFT, PLOT_TOP, spectral.plotWidth, spectral.plotHeight);
-      this.drawWave(wave.context, wave.plotWidth, wave.plotHeight, frame);
+      this.drawWave(wave.context, wave.plotWidth, wave.plotHeight, frame, waveScale.gain);
     } else {
       for (const plot of [spectral, wave]) {
         plot.context.fillStyle = '#bdd0d7';
@@ -84,11 +98,12 @@ export class PlotRenderer {
       spectral.context.fillText(frequency >= 1000 ? `${frequency / 1000}k` : String(frequency), PLOT_LEFT - 8, y + 4);
       lastY = y;
     }
-    for (const amplitude of [-1, 0, 1]) {
+    for (const amplitude of [waveScale.maxAmplitude, 0, -waveScale.maxAmplitude]) {
       wave.context.fillStyle = '#bdd0d7';
       wave.context.textAlign = 'right';
-      const y = PLOT_TOP + (1 - amplitude) / 2 * wave.plotHeight;
-      wave.context.fillText(String(amplitude), PLOT_LEFT - 8, y + 4);
+      const normalized = amplitude / waveScale.maxAmplitude;
+      const y = PLOT_TOP + (1 - normalized) / 2 * wave.plotHeight;
+      wave.context.fillText(formatAmplitude(amplitude), PLOT_LEFT - 8, y + 4);
     }
     timeAxis(spectral.context, spectral.width, spectral.height, settings.historySeconds);
     timeAxis(wave.context, wave.width, wave.height, settings.historySeconds);
@@ -103,8 +118,8 @@ export class PlotRenderer {
     }
   }
 
-  private drawWave(context: CanvasRenderingContext2D, width: number, height: number, frame: PlotFrame) {
-    const y = (sample: number) => PLOT_TOP + (1 - Math.max(-1, Math.min(1, sample))) / 2 * height;
+  private drawWave(context: CanvasRenderingContext2D, width: number, height: number, frame: PlotFrame, gain: number) {
+    const y = (sample: number) => PLOT_TOP + (1 - Math.max(-1, Math.min(1, sample * gain))) / 2 * height;
     context.save();
     context.beginPath();
     context.rect(PLOT_LEFT, PLOT_TOP, width, height);

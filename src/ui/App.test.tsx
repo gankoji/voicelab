@@ -26,6 +26,7 @@ describe('graph-first application', () => {
     expect(screen.getByLabelText('Visible history')).toBeVisible();
     expect(screen.getByLabelText('Visible history')).toHaveValue('10');
     expect(screen.getByLabelText('Show RMS amplitude')).not.toBeChecked();
+    expect(screen.getByLabelText('Auto-fit waveform amplitude')).toBeChecked();
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.getByLabelText('Visible history')).not.toBeVisible();
     expect(settings).toHaveFocus();

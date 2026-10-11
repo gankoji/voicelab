@@ -11,6 +11,10 @@
 - Bounded audio/spectral history and visible missing-data regions.
 - A zero-amplitude reference line plus a lightly tinted not-yet-captured region
   on the waveform, so silence is distinct from the leading empty history.
+- Optional automatic waveform gain (on by default): the vertical amplitude axis
+  scales to the loudest sample in the visible window, capped at 100× and never
+  zooming into signals below -60 dBFS. The y-axis labels show the fitted scale;
+  the dBFS input meter remains the un-scaled level reference.
 - Freeze/Resume keeps capture running while the view stops scrolling; hovering
   the frozen plots shows a time + frequency + approximate dB readout on the
   spectrogram and a time + min/max amplitude readout on the waveform.

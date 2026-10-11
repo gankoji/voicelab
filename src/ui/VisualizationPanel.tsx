@@ -129,7 +129,7 @@ export function VisualizationPanel({ controller, settings, frozenFrame }: {
       </section>
       <section className="panel waveform-panel" aria-labelledby="waveform-heading">
         <div className="panel-heading">
-          <h2 id="waveform-heading">Waveform</h2><span>{displayed.showRms ? 'RMS on · ' : ''}{stateLabel} · linear amplitude</span>
+          <h2 id="waveform-heading">Waveform</h2><span>{displayed.showRms ? 'RMS on · ' : ''}{displayed.autoWaveformGain ? 'Auto gain · ' : ''}{stateLabel} · linear amplitude</span>
         </div>
         <div className="canvas-frame">
           <canvas

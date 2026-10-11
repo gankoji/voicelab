@@ -12,11 +12,13 @@ export interface ViewSettings {
   floorDb: number;
   ceilingDb: number;
   showRms: boolean;
+  autoWaveformGain: boolean;
 }
 
 export const DEFAULT_VIEW: ViewSettings = {
   historySeconds: 10, minFrequency: 50, maxFrequency: 10000,
   frequencyScale: 'linear', fftSize: 2048, floorDb: -90, ceilingDb: 0, showRms: false,
+  autoWaveformGain: true,
 };
 
 function clamp(value: number, min: number, max: number, fallback: number) {
@@ -35,6 +37,7 @@ export function normalizeView(settings: ViewSettings, sampleRate: number): ViewS
     floorDb: clamp(settings.floorDb, -140, ceilingDb - 10, -90),
     ceilingDb,
     showRms: Boolean(settings.showRms),
+    autoWaveformGain: Boolean(settings.autoWaveformGain),
   };
 }
 
