@@ -4,8 +4,8 @@ import { PALETTE } from './palette';
 
 export const PLOT_LEFT = 54;
 export const PLOT_RIGHT = 12;
-const TOP = 12;
-const BOTTOM = 30;
+export const PLOT_TOP = 12;
+export const PLOT_BOTTOM = 30;
 
 function prepare(canvas: HTMLCanvasElement) {
   const width = canvas.clientWidth;
@@ -21,7 +21,7 @@ function prepare(canvas: HTMLCanvasElement) {
   context.fillStyle = '#0a1820';
   context.fillRect(0, 0, width, height);
   context.font = '11px system-ui';
-  return { context, width, height, plotWidth: width - PLOT_LEFT - PLOT_RIGHT, plotHeight: height - TOP - BOTTOM };
+  return { context, width, height, plotWidth: width - PLOT_LEFT - PLOT_RIGHT, plotHeight: height - PLOT_TOP - PLOT_BOTTOM };
 }
 
 function timeAxis(context: CanvasRenderingContext2D, width: number, height: number, seconds: number) {
@@ -63,7 +63,7 @@ export class PlotRenderer {
       }
       rasterContext.putImageData(this.image, 0, 0);
       spectral.context.imageSmoothingEnabled = false;
-      spectral.context.drawImage(this.rasterCanvas, PLOT_LEFT, TOP, spectral.plotWidth, spectral.plotHeight);
+      spectral.context.drawImage(this.rasterCanvas, PLOT_LEFT, PLOT_TOP, spectral.plotWidth, spectral.plotHeight);
       this.drawWave(wave.context, wave.plotWidth, wave.plotHeight, frame);
     } else {
       for (const plot of [spectral, wave]) {
@@ -79,7 +79,7 @@ export class PlotRenderer {
     const ticks = [settings.maxFrequency, 20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, settings.minFrequency];
     for (const frequency of [...new Set(ticks)].sort((a, b) => b - a)) {
       if (frequency < settings.minFrequency || frequency > settings.maxFrequency) continue;
-      const y = TOP + (1 - frequencyFraction(frequency, settings)) * spectral.plotHeight;
+      const y = PLOT_TOP + (1 - frequencyFraction(frequency, settings)) * spectral.plotHeight;
       if (y - lastY < 20) continue;
       spectral.context.fillText(frequency >= 1000 ? `${frequency / 1000}k` : String(frequency), PLOT_LEFT - 8, y + 4);
       lastY = y;
@@ -87,7 +87,7 @@ export class PlotRenderer {
     for (const amplitude of [-1, 0, 1]) {
       wave.context.fillStyle = '#bdd0d7';
       wave.context.textAlign = 'right';
-      const y = TOP + (1 - amplitude) / 2 * wave.plotHeight;
+      const y = PLOT_TOP + (1 - amplitude) / 2 * wave.plotHeight;
       wave.context.fillText(String(amplitude), PLOT_LEFT - 8, y + 4);
     }
     timeAxis(spectral.context, spectral.width, spectral.height, settings.historySeconds);
@@ -104,10 +104,10 @@ export class PlotRenderer {
   }
 
   private drawWave(context: CanvasRenderingContext2D, width: number, height: number, frame: PlotFrame) {
-    const y = (sample: number) => TOP + (1 - Math.max(-1, Math.min(1, sample))) / 2 * height;
+    const y = (sample: number) => PLOT_TOP + (1 - Math.max(-1, Math.min(1, sample))) / 2 * height;
     context.save();
     context.beginPath();
-    context.rect(PLOT_LEFT, TOP, width, height);
+    context.rect(PLOT_LEFT, PLOT_TOP, width, height);
     context.clip();
     context.strokeStyle = '#b4eadc';
     context.lineWidth = 1;

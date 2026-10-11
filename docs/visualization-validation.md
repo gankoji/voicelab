@@ -9,10 +9,13 @@
   when at least one horizontal display column is available per sample.
 - Optional centered 20 ms RMS, on the waveform's linear amplitude axis.
 - Bounded audio/spectral history and visible missing-data regions.
+- Freeze/Resume keeps capture running while the view stops scrolling; hovering
+  the frozen plots shows a time + frequency + approximate dB readout on the
+  spectrogram and a time + min/max amplitude readout on the waveform.
 
-Freeze/pan/cursor inspection, exports, saved preferences, alternate palettes,
-pitch, and formants remain future work. Stop preserves the last rendered data,
-not a frozen/reanalyzable audio snapshot.
+Zoom/pan over the retained history, exports, saved preferences, alternate
+palettes, pitch, and formants remain future work. Stop preserves the last
+rendered data, not a frozen/reanalyzable audio snapshot.
 
 ## Signal-processing contract
 
@@ -101,10 +104,13 @@ After syncing the milestone, run `npm ci` (new FFT dependency), then
    5 kHz upper limit, the frequency-detail preset, and the optional RMS overlay.
 5. Switch to 20 ms/5 ms visible history to see waveform cycles. Both panels
    keep the same displayed time interval.
-6. Press **Stop**. Verify capture releases, plots stop, and the last view stays
+6. Press **Freeze** while singing. Confirm the plots stop scrolling, capture
+   remains live, and hovering each plot shows a numeric readout. Press
+   **Resume** to return to the scrolling view.
+7. Press **Stop**. Verify capture releases, plots stop, and the last view stays
    visible. Record again; previous history must clear rather than joining
    unrelated sessions.
-7. Resize the window and check labels/controls and the shared horizontal axes.
+8. Resize the window and check labels/controls and the shared horizontal axes.
 
 Report unexpected behavior with browser/OS, input device, selected settings,
 and whether the dropped-sample counter increases. No recording is needed.

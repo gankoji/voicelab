@@ -171,3 +171,34 @@ test('draws the known tone in aligned plots, changes scales, and shows sample de
   await expect(page.getByText(/Stopped · last view · linear amplitude/)).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test('freezes the view for inspection without stopping capture, then resumes', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: 'Freeze' })).toBeDisabled();
+  await page.getByRole('button', { name: 'Record', exact: true }).click();
+  await expect(page.getByRole('status', { name: 'Capture status' })).toHaveText('Live · mic on');
+
+  const spectrum = page.getByRole('img', { name: /^Live spectrogram/ });
+  const wave = page.getByRole('img', { name: /^Live waveform/ });
+  await expect.poll(async () => Number(await spectrum.getAttribute('data-end-sample'))).toBeGreaterThan(60000);
+
+  await page.getByRole('button', { name: 'Freeze' }).click();
+  await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
+  // Capture keeps running while the display is frozen.
+  await expect(page.getByRole('status', { name: 'Capture status' })).toHaveText('Live · mic on');
+
+  await spectrum.hover();
+  await expect(page.getByLabel('Spectrogram inspection')).toBeVisible();
+  const spectrumText = await page.getByLabel('Spectrogram inspection').innerText();
+  expect(spectrumText).toMatch(/Hz/);
+  expect(spectrumText).toMatch(/dBFS|no data/);
+
+  await wave.hover();
+  await expect(page.getByLabel('Waveform inspection')).toBeVisible();
+  expect(await page.getByLabel('Waveform inspection').innerText()).toMatch(/amp|no data/);
+
+  await page.getByRole('button', { name: 'Resume' }).click();
+  await expect(page.getByRole('button', { name: 'Freeze' })).toBeVisible();
+  await expect(page.getByLabel('Spectrogram inspection')).toBeHidden();
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
+});

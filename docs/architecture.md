@@ -119,11 +119,21 @@ actually used for that view.
 - View: live or a frozen immutable snapshot, with a selected time range.
 
 Current stop behavior retains only the last render data and destroys the worker's
-rolling history. Display settings are disabled for that stopped view; starting
-clears it. Freeze/inspection/export are not yet implemented.
+rolling history. Display settings remain editable while stopped; changes apply
+the next time the user records, and the stopped view stays as captured. Starting
+clears it.
 
-The planned freeze operation copies a bounded, coherent snapshot (audio, analysis, settings, sample
-range) that cannot be overwritten by continued capture. Keep microphone status
+Freeze captures the currently rendered frame (indexed-color spectrum raster plus
+waveform min/max/trace arrays). These buffers are transferred to the main thread
+and never mutated afterward, so the frozen snapshot is stable while capture
+continues filling the worker's history. Resume returns to the live, scrolling
+view. Cursor inspection reads time, frequency, and an approximate dB value from
+that same frozen raster (quantized to the color scale), plus exact waveform
+min/max.
+
+A full zoom/pan inspection over the retained history requires keeping a raw-audio
+snapshot and re-running analysis rather than the rendered raster; that remains a
+follow-up. Keep microphone status
 visible. Stopping capture releases tracks/nodes and leaves the snapshot
 available until explicitly discarded or the page is closed.
 

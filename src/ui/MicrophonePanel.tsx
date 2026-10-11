@@ -20,10 +20,12 @@ function processingLabel(value: boolean | string | undefined) {
   return value === undefined ? 'Unknown' : value ? 'On' : 'Off';
 }
 
-export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, children }: {
+export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, frozen, onFreezeToggle, children }: {
   controller: CaptureController;
   settingsOpen: boolean;
   onSettingsChange: (open: boolean) => void;
+  frozen: boolean;
+  onFreezeToggle: () => void;
   children: ReactNode;
 }) {
   const capture = useSyncExternalStore(controller.subscribe, controller.getSnapshot);
@@ -120,6 +122,16 @@ export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, ch
             title={capture.details?.deviceLabel ?? capture.message}>
             {statusLabels[capture.status]}
           </span>
+          <button
+            type="button"
+            className={frozen ? 'freeze-button is-frozen' : 'freeze-button'}
+            title={frozen ? 'Return to the live, scrolling view' : 'Freeze the current view for inspection (capture continues)'}
+            disabled={!frozen && capture.status !== 'running'}
+            onClick={onFreezeToggle}
+          >
+            <span className="freeze-icon" aria-hidden="true" />
+            {frozen ? 'Resume' : 'Freeze'}
+          </button>
           <div className="meters" aria-label="Digital input levels">
             <div className="level-row">
               <label htmlFor="peak-meter">Peak</label>

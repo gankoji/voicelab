@@ -47,11 +47,16 @@ Evidence and manual steps: [visualization validation](visualization-validation.m
 
 INS-01–02, EXP-01–02, SET-01, ACC-01.
 
-- Immutable freeze snapshot, zoom/pan/cursor inspection and live resume.
-- WAV, plot image, and settings export from an explicit interval.
-- Preference persistence, keyboard navigation, numeric readouts, color options.
+- [x] Freeze a stable snapshot while capture continues, and resume to live.
+- [x] Pointer cursor inspection: time + frequency + approximate dB on the
+      spectrogram, time + min/max amplitude on the waveform.
+- [ ] Zoom/pan an immutable retained-history snapshot with reanalysis.
+- [ ] WAV, plot image, and settings export from an explicit interval.
+- [ ] Preference persistence, keyboard navigation, numeric readouts, color options.
 
 Exit: a singer can start, sing, freeze, inspect, export, and stop unaided.
+Current freeze/inspection is recorded in
+[visualization validation](visualization-validation.md); full zoom/export remains.
 
 ## Phase 1D — release hardening and browser reach
 
