@@ -18,7 +18,7 @@ createRoot(root).render(
 // Production-only offline asset caching. Never registered in development.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {
+    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {
       // Offline support is best-effort; never block the application on it.
     });
   });

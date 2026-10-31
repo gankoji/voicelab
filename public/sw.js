@@ -27,7 +27,8 @@ self.addEventListener('fetch', (event) => {
         return fresh;
       } catch {
         const cached = await cache.match(request);
-        return cached || (await cache.match('/')) || Response.error();
+        const appRoot = new URL('./', self.location.href).href;
+        return cached || (await cache.match(appRoot)) || Response.error();
       }
     })());
   } else {
