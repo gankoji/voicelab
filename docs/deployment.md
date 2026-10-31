@@ -30,6 +30,14 @@ The development server (`npm run dev`) never registers the service worker.
 - No server-side routes, environment-specific secrets, or build-step API access
   are needed.
 
+## GitHub Pages
+
+The `Deploy to GitHub Pages` workflow builds and publishes the site whenever
+`main` is updated, and can also be started manually from the Actions tab. In the
+repository settings, set **Pages → Build and deployment → Source** to **GitHub
+Actions**. The production build uses the `/voicelab/` project-site path, including
+for service-worker registration and offline navigation.
+
 ## Updates and the service worker
 
 Navigation requests are network-first, so serving a new `index.html` (with new
