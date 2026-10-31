@@ -20,7 +20,7 @@ function processingLabel(value: boolean | string | undefined) {
   return value === undefined ? 'Unknown' : value ? 'On' : 'Off';
 }
 
-export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, frozen, pausePending, deviceId, onDeviceChange, onPauseToggle, onStop, onRecord, onExport, children }: {
+export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, frozen, pausePending, deviceId, onDeviceChange, onPauseToggle, onStop, onRecord, onExport, onImport, importing, importMessage, onCancelImport, editing, children }: {
   controller: CaptureController;
   settingsOpen: boolean;
   onSettingsChange: (open: boolean) => void;
@@ -32,6 +32,11 @@ export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, fr
   onStop: () => void;
   onRecord: (deviceId: string) => void;
   onExport: () => void;
+  onImport: (file: File) => void;
+  importing: boolean;
+  importMessage: string;
+  onCancelImport: () => void;
+  editing: boolean;
   children: ReactNode;
 }) {
   const capture = useSyncExternalStore(controller.subscribe, controller.getSnapshot);
@@ -40,6 +45,7 @@ export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, fr
   const active = capture.status === 'requesting' || capture.status === 'running';
   const settingsButton = useRef<HTMLButtonElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!settingsOpen) return;
@@ -118,10 +124,23 @@ export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, fr
             type="button"
             className={active ? 'record-button is-active' : 'record-button'}
             title={active ? 'Stop microphone capture' : 'Analyze live microphone input — not saved'}
+            disabled={editing}
             onClick={() => active ? onStop() : onRecord(deviceId)}
           >
             <span className={active ? 'stop-icon' : 'record-icon'} aria-hidden="true" />
             {active ? 'Stop' : 'Record'}
+          </button>
+          <input ref={fileInput} type="file" accept="audio/*,.wav,.mp3,.flac,.ogg,.m4a"
+            className="visually-hidden" tabIndex={-1} aria-label="Choose audio file"
+            onChange={(event) => {
+              const file = event.currentTarget.files?.[0];
+              event.currentTarget.value = '';
+              if (file) onImport(file);
+            }} />
+          <button type="button" className="import-button" disabled={active || importing || editing}
+            title={active ? 'Stop recording before opening a file' : 'Open an audio file from this device'}
+            onClick={() => fileInput.current?.click()}>
+            {importing ? 'Opening…' : 'Open file'}
           </button>
           <span role="status" aria-label="Capture status" className={active ? 'capture-indicator active' : 'capture-indicator'}
             title={capture.details?.deviceLabel ?? capture.message}>
@@ -173,6 +192,9 @@ export function MicrophonePanel({ controller, settingsOpen, onSettingsChange, fr
             Export
           </button>
         </div>
+        {importMessage && <p role="status" className="capture-message">{importMessage}
+          {importing && <> <button type="button" onClick={onCancelImport}>Cancel import</button></>}
+        </p>}
         {showNotice && <p role={capture.status === 'error' ? 'alert' : 'status'} className="capture-message">{capture.message}</p>}
         {reading?.nearClipping && <p className="clip-warning" role="alert">Near digital clipping — lower your microphone input gain.</p>}
         {Boolean(reading?.droppedSamples) && <p className="clip-warning">Audio gaps detected: {reading?.droppedSamples} samples were not processed.</p>}

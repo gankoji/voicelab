@@ -1,7 +1,13 @@
 /* Voice Lab service worker: offline application assets only. No audio, accounts, or analytics. */
-const CACHE = 'voice-lab-v1';
+const CACHE = 'voice-lab-v2';
 
-self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('install', (event) => {
+  // The guide is optional: a failed fetch must not prevent offline app updates.
+  event.waitUntil(caches.open(CACHE)
+    .then((cache) => cache.add(new URL('./guide/index.html', self.location.href).href))
+    .catch(() => {})
+    .then(() => self.skipWaiting()));
+});
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
@@ -28,7 +34,12 @@ self.addEventListener('fetch', (event) => {
       } catch {
         const cached = await cache.match(request);
         const appRoot = new URL('./', self.location.href).href;
-        return cached || (await cache.match(appRoot)) || Response.error();
+        if (cached) return cached;
+        // A missing guide or other page must never silently become the app.
+        if (url.pathname === new URL(appRoot).pathname || url.pathname === new URL('index.html', appRoot).pathname) {
+          return (await cache.match(appRoot)) || Response.error();
+        }
+        return Response.error();
       }
     })());
   } else {

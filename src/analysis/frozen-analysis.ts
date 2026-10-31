@@ -9,7 +9,8 @@ import type { FormantPoint } from './formants';
 /**
  * Re-analysis of an immutable raw-audio snapshot, used while the live view is
  * frozen. It holds its own history/spectra so the live worker keeps streaming.
- * The snapshot is analyzed once per FFT size; zoom/pan only re-rasterizes.
+ * Live snapshots are analyzed once per FFT size. Imported recordings cache
+ * only the spectra needed for the current view.
  */
 export class FrozenAnalysis {
   readonly sampleRate: number;
@@ -19,17 +20,19 @@ export class FrozenAnalysis {
   private readonly formants: FormantPoint[];
   private stft: Stft;
   private spectra: SpectralHistory;
+  private cachedStart = -1;
+  private cachedEnd = -1;
 
-  constructor(sampleRate: number, samples: Float32Array, initialFftSize: number, pitch: PitchPoint[] = [], formants: FormantPoint[] = []) {
+  constructor(sampleRate: number, samples: Float32Array, initialFftSize: number, pitch: PitchPoint[] = [], formants: FormantPoint[] = [], private readonly completeRecording = false) {
     this.sampleRate = sampleRate;
     this.snapshot = samples;
     this.pitch = pitch;
     this.formants = formants;
     this.audio = new AudioHistory(samples.length);
     this.audio.append(samples, 0);
-    this.spectra = this.createSpectra(initialFftSize);
+    this.spectra = this.createSpectra(initialFftSize, completeRecording ? 0 : samples.length);
     this.stft = this.createStft(initialFftSize);
-    this.stft.push(samples, 0);
+    if (!completeRecording) this.stft.push(samples, 0);
   }
 
   get endSample() {
@@ -54,14 +57,14 @@ export class FrozenAnalysis {
     return this.formants.filter((point) => point.sampleIndex >= start && point.sampleIndex < end);
   }
 
-  /** Rightmost sample whose analysis window is complete (aligned with the live view). */
+  /** Complete recordings expose the tail; live snapshots keep the delayed-view alignment. */
   get displayEnd() {
-    return Math.max(0, this.audio.endSample - this.stft.size / 2);
+    return this.completeRecording ? this.audio.endSample : Math.max(0, this.audio.endSample - this.stft.size / 2);
   }
 
-  private createSpectra(size: number) {
+  private createSpectra(size: number, sampleCount = this.snapshot.length) {
     const hop = size / 4;
-    return new SpectralHistory(Math.ceil(this.snapshot.length / hop) + 2, size, hop);
+    return new SpectralHistory(Math.ceil(sampleCount / hop) + 2, size, hop);
   }
 
   private createStft(size: number) {
@@ -74,9 +77,25 @@ export class FrozenAnalysis {
     this.stft.push(this.snapshot, 0);
   }
 
+  private prepareRecordingSpectra(start: number, end: number, size: number) {
+    if (this.stft.size === size && this.cachedStart <= start && this.cachedEnd >= end) return;
+    const hop = size / 4;
+    // Match the full-recording STFT's window origins and include cells that
+    // overlap either edge of the requested range.
+    const firstWindow = Math.max(0, Math.floor((start - size / 2 - hop / 2) / hop));
+    const lastWindow = Math.max(firstWindow, Math.ceil((end - size / 2 + hop / 2) / hop));
+    const first = firstWindow * hop;
+    const last = Math.min(this.snapshot.length, lastWindow * hop + size);
+    this.spectra = this.createSpectra(size, Math.max(0, last - first));
+    this.stft = this.createStft(size);
+    this.stft.push(this.snapshot.subarray(first, last), first);
+    this.cachedStart = start;
+    this.cachedEnd = end;
+  }
+
   renderRange(requestedStart: number, requestedEnd: number, requested: ViewSettings, requestedWidth: number): PlotFrame {
     const settings = normalizeView(requested, this.sampleRate);
-    if (this.stft.size !== settings.fftSize) this.rebuild(settings.fftSize);
+    if (!this.completeRecording && this.stft.size !== settings.fftSize) this.rebuild(settings.fftSize);
     const width = Math.max(1, Math.min(MAX_PLOT_WIDTH, Math.round(requestedWidth) || 1));
     const maxEnd = this.displayEnd;
     let start = Math.max(0, Math.round(requestedStart));
@@ -86,6 +105,7 @@ export class FrozenAnalysis {
       if (start >= end) start = Math.max(0, end - 1);
     }
     start = Math.max(0, Math.min(start, Math.max(0, end - 1)));
+    if (this.completeRecording) this.prepareRecordingSpectra(start, end, settings.fftSize);
 
     const minimum = new Float32Array(width).fill(NaN);
     const maximum = new Float32Array(width).fill(NaN);

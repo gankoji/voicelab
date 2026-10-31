@@ -11,6 +11,20 @@ function tone(length: number, amplitude = 0.25) {
 describe('frozen re-analysis', () => {
   const samples = tone(sampleRate * 2);
 
+  it('matches full-snapshot spectra when an imported recording is panned or zoomed', () => {
+    const full = new FrozenAnalysis(sampleRate, samples, 2048);
+    const imported = new FrozenAnalysis(sampleRate, samples, 2048, [], [], true);
+    for (const fftSize of [1024, 2048, 4096]) {
+      const settings = { ...DEFAULT_VIEW, fftSize };
+      for (const [start, end] of [[0, 24000], [23001, 56003], [30000, 40000], [70000, 90000]]) {
+        const expected = full.renderRange(start!, end!, settings, 100);
+        const actual = imported.renderRange(start!, end!, settings, 100);
+        expect(actual.spectrum).toEqual(expected.spectrum);
+      }
+    }
+    expect(imported.displayEnd).toBe(samples.length);
+  });
+
   it('renders an explicit sub-range and preserves waveform min/max', () => {
     const analysis = new FrozenAnalysis(sampleRate, samples, 2048);
     const frame = analysis.renderRange(48000, 90000, DEFAULT_VIEW, 100);

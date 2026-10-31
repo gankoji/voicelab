@@ -120,5 +120,5 @@ tested; unreliable estimates are not presented as measured facts.
 
 ## Outside these phases
 
-Playback, importing files, comparison takes, calibrated SPL, native packaging,
+Playback, comparison takes, calibrated SPL, native packaging,
 multichannel/system audio, health or technique scoring, cloud features.

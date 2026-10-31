@@ -3,15 +3,16 @@ import type { CaptureController } from '../audio/capture-controller';
 import { normalizeView } from '../analysis/view';
 import type { ViewSettings } from '../analysis/view';
 
-export function DisplaySettings({ controller, settings, onChange, frozen }: {
+export function DisplaySettings({ controller, settings, onChange, frozen, sampleRate: recordingSampleRate }: {
   controller: CaptureController;
   settings: ViewSettings;
   onChange: (settings: ViewSettings) => void;
   frozen: boolean;
+  sampleRate?: number;
 }) {
   const status = useSyncExternalStore(controller.subscribe, () => controller.getSnapshot().status);
   const retained = controller.getView();
-  const sampleRate = controller.getSnapshot().details?.sampleRate ?? retained?.sampleRate ?? 48000;
+  const sampleRate = recordingSampleRate ?? controller.getSnapshot().details?.sampleRate ?? retained?.sampleRate ?? 48000;
   const displayed = normalizeView(settings, sampleRate);
   const update = (patch: Partial<ViewSettings>) => onChange({ ...settings, ...patch });
   // Settings are editable whenever capture is not mid-request. While paused,
@@ -114,8 +115,8 @@ export function DisplaySettings({ controller, settings, onChange, frozen }: {
           delayed by half an analysis window to align with the spectrum.
         </p>
         <p className="capture-note">
-          Up to 30 seconds are retained while capturing. Stop discards the rolling audio buffer;
-          the last view remains. Freezing, cursor inspection, and exports are still in development.
+          Up to 30 seconds are retained while capturing. Pausing or stopping keeps a snapshot
+          for inspection and export.
           This is an exploration tool, not a diagnostic or calibrated SPL instrument.
         </p>
       </details>

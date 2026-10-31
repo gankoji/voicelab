@@ -287,17 +287,21 @@ test('shows formant tracks and readout for a voiced tone', async ({ page }) => {
   await expect(formants).toContainText('Hz');
   await expect(formants).toContainText('440');
 
-  const orange = await spectrum.evaluate((element) => {
+  // F1 can coincide with the pitch trace for a pure tone. Count any of the
+  // three formant colors, allowing for anti-aliasing against the spectrogram.
+  await expect.poll(() => spectrum.evaluate((element) => {
     const canvas = element as HTMLCanvasElement;
     const pixels = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
     let count = 0;
     for (let i = 0; i < pixels.length; i += 4) {
       const r = pixels[i]!, g = pixels[i + 1]!, b = pixels[i + 2]!;
-      if (r > 240 && g > 150 && g < 210 && b < 110) count++;
+      const orange = r > 240 && g > 150 && g < 210 && b < 110;
+      const purple = r > 145 && r < 225 && g > 65 && g < 160 && b > 200;
+      const green = r > 80 && r < 170 && g > 190 && b > 115 && b < 210;
+      if (orange || purple || green) count++;
     }
     return count;
-  });
-  expect(orange).toBeGreaterThan(100);
+  })).toBeGreaterThan(100);
 
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
 });

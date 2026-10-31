@@ -1,8 +1,8 @@
 # Requirements
 
-Status: capture, levels, live/frozen visualization, zoom/inspect, export,
-preferences, and F0/12TET pitch tracking are implemented; F1–F3 formants (Phase 2B)
-remain unimplemented. See [capture validation](capture-validation.md),
+Status: capture, local file import, live/frozen visualization, zoom/inspect,
+export, preferences, F0/12TET pitch and preliminary F1–F3 formants are implemented.
+See [capture validation](capture-validation.md),
 [visualization validation](visualization-validation.md), and
 [release hardening](release-hardening.md) for evidence and limits.
 Requirement IDs are stable references for issues, code reviews, and tests.
@@ -80,7 +80,7 @@ document alone is not an accuracy or compatibility guarantee.
 
 ## Not in current scope
 
-Playback, file import, take comparison, vocal-technique scoring, clinical
+Playback, take comparison, vocal-technique scoring, clinical
 interpretation, calibrated SPL, system-audio capture, stereo/multichannel
 analysis, native apps, cloud storage, and collaboration. Adding any of these
 requires a separate scope decision.
