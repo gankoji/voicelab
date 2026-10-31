@@ -3,24 +3,20 @@
 An open-source, browser-first voice visualization app for singers exploring
 their own voices.
 
-**Status: live visualization milestone.** Microphone capture, a scrolling
-spectrogram, synchronized detailed waveform, optional RMS overlay, input levels,
-near-clipping warnings, and capture-settings reporting work. Processing and a
-bounded recent-audio buffer stay on your device; no audio is saved or uploaded.
-Freezing, cursor inspection, exports, pitch, and formant analysis are not
-implemented yet.
+**Status:** Live microphone capture and local file import support spectrogram,
+waveform, pitch and formant visualization, frozen inspection, and exports.
+Pitch and formant estimates still need real-voice validation. Processing and
+audio stay on your device; audio is not uploaded or saved unless exported.
 
-## Planned capabilities
+## For singers
 
-- **Phase 1:** real-time spectrogram and synchronized detailed waveform,
-  optional RMS, microphone controls, freeze/zoom/inspect, WAV and image exports.
-- **Phase 2 (required):** F0 tracking, 12TET note/octave/cents with adjustable
-  tuning reference, and F1–F3 formant tracking with explicit uncertainty.
-- Local processing without accounts, audio uploads, or telemetry. Desktop
-  browsers first; phone/tablet browser support will require real-device tests.
+Start with the [Voice Lab guide](https://gankoji.github.io/voicelab/guide/).
+It walks through recording, opening a file, listening, comparing sections,
+filtering frequencies and saving your work. The app also has a **Help & guide**
+link at the top of every screen.
 
-This is an exploration tool, not a medical device. Digital amplitude is not
-calibrated sound pressure level, and pitch/formant estimates have limitations.
+Voice Lab is a tool for exploring your voice, not a medical device. Its pitch,
+overtone and formant readings are estimates, not diagnoses.
 
 ## Develop
 
@@ -37,28 +33,9 @@ Microphone capture requires a secure context: localhost for desktop
 development or HTTPS for deployment and testing from another device. A phone
 visiting a plain HTTP LAN address is not equivalent to localhost.
 
-Open the app and press **Record** to begin live analysis. The spectrogram and
-waveform fill most of the window; a compact toolbar shows capture status and
-peak/RMS level readouts. Use **Settings** to choose an input or adjust the plots.
-**Pause** freezes the view for inspection while capture continues; **Stop**
-releases the microphone and keeps a snapshot you can still inspect. Selecting
-another input stops capture until you explicitly record again. Capture also
-stops when the page is hidden or left; it never resumes automatically.
-
-While paused or stopped, scroll or drag on the spectrogram to zoom and pan, and
-hover (or use the arrow keys while the plot is focused) to read time, frequency,
-and amplitude. **Export** downloads the paused interval as a WAV file, a composite
-PNG of the two plots, and a JSON sidecar. Display settings and the chosen input
-persist in localStorage between sessions; audio and microphone consent never do.
-
-Analysis requests a 48 kHz AudioContext; Web Audio resamples inputs as needed.
-The details distinguish input and analysis rates. Both plots are delayed by
-half an FFT window to align waveform samples with centered spectral estimates.
-
-Processing-off requests are best effort: hardware/OS processing may still apply.
-The near-clipping warning means a digital sample reached -0.1 dBFS or higher;
-it cannot detect every instance of analog distortion. There is no speaker
-monitoring, so you should not hear delayed playback.
+The [singer guide](https://gankoji.github.io/voicelab/guide/) is the main
+user-facing documentation. Its source is `public/guide/index.html`; Vite copies
+it into the deployed site without a separate documentation service.
 
 ```sh
 npm run check          # Unit tests, strict TypeScript check, production build, license audit

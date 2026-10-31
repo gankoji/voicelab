@@ -37,9 +37,15 @@ The `Deploy to GitHub Pages` workflow builds and publishes the site whenever
 repository settings, set **Pages → Build and deployment → Source** to **GitHub
 Actions**. The production build uses the `/voicelab/` project-site path, including
 for service-worker registration and offline navigation.
+The singer guide is a static page at `guide/index.html` under that same base path. Its
+source is `public/guide/index.html`, which Vite copies to `dist/guide/index.html`.
+The app's Help link uses Vite's base URL so it works both at the domain root
+and under `/voicelab/`.
 
 ## Updates and the service worker
 
 Navigation requests are network-first, so serving a new `index.html` (with new
 hashed asset URLs) immediately updates returning visitors online. The cache name
 in `public/sw.js` can be bumped if a forced cache purge is ever warranted.
+The worker makes a best-effort attempt to cache the guide during installation.
+If that fails, the app still works; opening the guide online also caches it.

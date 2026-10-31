@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Voice Lab guide</title>
+  <style>
+    :root { font-family: system-ui, sans-serif; color: #18343b; background: #f1f5f3; line-height: 1.6; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    main { max-width: 52rem; margin: auto; padding: 1.25rem 1rem 4rem; }
+    h1, h2, h3 { line-height: 1.25; color: #102f38; }
+    h1 { font-size: clamp(2rem, 6vw, 2.7rem); margin-bottom: .4rem; }
+    h2 { margin-top: 0; font-size: 1.45rem; }
+    h3 { font-size: 1.1rem; }
+    a { color: #07566e; text-decoration-thickness: .1em; text-underline-offset: .16em; }
+    a:hover { color: #003a4d; }
+    :focus-visible { outline: 3px solid #146ab0; outline-offset: 3px; }
+    section, nav { background: white; border: 1px solid #c4d5ce; border-radius: .6rem; padding: 1.1rem 1.25rem; margin-top: 1rem; }
+    nav ul { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; padding-left: 1.25rem; }
+    li + li { margin-top: .35rem; }
+    .intro { font-size: 1.12rem; }
+    .note { background: #eaf4f0; border-left: .3rem solid #31795e; padding: .8rem 1rem; }
+    strong { color: #102f38; }
+    @media (max-width: 35rem) { main { padding: .8rem .75rem 3rem; } section, nav { padding: 1rem; } }
+  </style>
+</head>
+<body>
+<main>
+  <p><a href="../">← Back to Voice Lab</a></p>
+  <h1>Voice Lab guide</h1>
+  <p class="intro">Explore the sound of your voice, listen to a recording, and compare the parts that interest you. You don't need to know audio engineering to get started.</p>
+  <p class="note"><strong>Your audio stays on your device.</strong> Voice Lab does not upload it. Save anything you want to keep with <strong>Export</strong> before closing or replacing a recording.</p>
+
+  <nav aria-label="In this guide">
+    <strong>Jump to a topic</strong>
+    <ul>
+      <li><a href="#start">Start singing</a></li>
+      <li><a href="#open">Open a recording</a></li>
+      <li><a href="#read">Read the pictures</a></li>
+      <li><a href="#select">Select and listen</a></li>
+      <li><a href="#compare">Compare sections</a></li>
+      <li><a href="#filter">Explore frequencies</a></li>
+      <li><a href="#save">Save your work</a></li>
+      <li><a href="#help">Troubleshooting and privacy</a></li>
+    </ul>
+  </nav>
+
+  <section id="start">
+    <h2>Start singing</h2>
+    <ol>
+      <li>Open Voice Lab in a current desktop browser and choose <strong>Record</strong>. Allow microphone access if your browser asks.</li>
+      <li>Sing a note or a short phrase. The pictures move as you sing. The peak and RMS meters show your input level; lower your microphone level if you see a near-clipping warning.</li>
+      <li>Choose <strong>Pause</strong> to hold the pictures still. The microphone continues capturing while paused. Choose <strong>Resume</strong> to return to the live view.</li>
+      <li>Choose <strong>Stop</strong> when finished. This turns off the microphone and keeps a snapshot to explore.</li>
+    </ol>
+    <p>Voice Lab keeps only the most recent roughly <strong>30 seconds</strong> of microphone audio. Export a section before starting a new recording if you want to keep it.</p>
+    <p>Switching tabs, leaving the page, or changing the input stops the microphone. It will not start again until you choose <strong>Record</strong>. Opening this guide in another tab can therefore stop capture.</p>
+  </section>
+
+  <section id="open">
+    <h2>Open a recording</h2>
+    <ol>
+      <li>Stop the microphone if it is running, then choose <strong>Open file</strong>.</li>
+      <li>Choose an audio file from your device. WAV and MP3 often work; available formats depend on your browser.</li>
+      <li>Wait for analysis to finish. Longer files can take time and use more memory. You can cancel while analysis is running.</li>
+    </ol>
+    <p>Voice Lab mixes recordings with multiple channels to one channel for analysis. For long files, use the <strong>Recording position</strong> slider to move through the recording. Starting a new recording replaces the current view.</p>
+  </section>
+
+  <section id="read">
+    <h2>Read the pictures</h2>
+    <p>The <strong>spectrogram</strong> is the colorful upper picture. Time runs left to right; lower sounds are near the bottom and higher sounds near the top. Brighter colors show stronger sound at that frequency. The <strong>waveform</strong> below shows how the sound's digital level changes over time.</p>
+    <p>The note and frequency are estimates of your fundamental pitch. The F1–F3 numbers are estimates of vocal resonances, called formants. These are different from overtones. Noise, breathiness, high notes and other sounds can make estimates unreliable or leave gaps. This is an exploration tool, not a medical device or a measure of vocal health.</p>
+    <p>Open <strong>Settings</strong> to change the frequency range or <strong>Frequency scale</strong>. Linear spacing helps show harmonics; logarithmic spacing spreads out lower frequencies and musical intervals. Settings change the picture, not the sound. The waveform's auto-fit changes its display scale, not your recording level.</p>
+  </section>
+
+  <section id="select">
+    <h2>Select a part and listen</h2>
+    <ol>
+      <li>Pause or stop a recording, or open a file. Scroll over the spectrogram to zoom. Choose <strong>Pan</strong> and drag either picture to move along the recording.</li>
+      <li>Choose <strong>Select</strong>, then drag across the part you want in either picture. Or enter <strong>Start (seconds)</strong> and <strong>End (seconds)</strong>, then choose <strong>Set selection</strong>.</li>
+      <li>Open <strong>Playback and editing</strong>. If recording from a microphone, choose <strong>Stop</strong> first; playback is unavailable while the microphone is active. Choose <strong>Play selection</strong>. With no selection, the button plays the visible view instead.</li>
+    </ol>
+    <p>Choose <strong>Clear selection</strong> to start over. Hover over the paused spectrogram to inspect a point; when it is focused, arrow keys move the cursor, Shift + left/right pans, and + or − zooms.</p>
+    <p>For a selected part, <strong>Measured overtones</strong> lists average detected peaks for harmonics 2–8. Hover near an average frequency on the spectrogram to see it there too. Weak or unclear peaks may be omitted; these numbers are estimates, not exact measurements.</p>
+  </section>
+
+  <section id="compare">
+    <h2>Compare sections back to back</h2>
+    <ol>
+      <li>Stop capture and select the first section. Open <strong>Playback and editing</strong> and choose <strong>Copy selection</strong> (or <strong>Cut selection</strong> to remove it).</li>
+      <li>Select the section you want it next to. Choose <strong>Use selection start</strong> or <strong>Use selection end</strong> to set where it will be inserted, then choose <strong>Paste</strong>.</li>
+      <li>Wait for analysis to finish, select the joined section and play it. Choose <strong>Undo edit</strong> if you want to go back one edit.</li>
+    </ol>
+    <p>Copy and paste use Voice Lab's own temporary clipboard, not your computer's clipboard. The clipboard and destination need matching sample rates. You cannot cut the entire recording. Edits create an in-memory copy and do not change the original file. There is one level of undo.</p>
+  </section>
+
+  <section id="filter">
+    <h2>Explore a range of frequencies</h2>
+    <ol>
+      <li>Stop capture or open a file. Select the time interval you want to change; with no selection, the filter uses the visible view.</li>
+      <li>Choose <strong>Frequency band</strong>, then drag up or down on the spectrogram to mark the range. Alternatively, open <strong>Playback and editing</strong>, enter the low and high frequencies, and choose <strong>Set frequency band</strong>.</li>
+      <li>Under <strong>Playback and editing</strong>, choose <strong>Keep band</strong> to emphasize that range or <strong>Reduce band</strong> to quiet it. Wait for analysis, then play the result. <strong>Undo edit</strong> restores the previous version.</li>
+    </ol>
+    <p>The filter fades gradually around the chosen frequencies rather than cutting them perfectly. The sound's level or character can change, and abrupt boundaries can click. Start at a comfortable listening volume.</p>
+  </section>
+
+  <section id="save">
+    <h2>Save your work</h2>
+    <p>Pause or stop, then choose <strong>Export</strong>. Voice Lab downloads the <strong>visible interval</strong> as a WAV audio file, an image of the pictures, and a JSON file with settings and analysis. Your browser may ask permission for multiple downloads. Zoom or pan first to choose what is visible; a time selection alone does not change the exported interval.</p>
+    <p>Export before closing the page or starting a new recording. Audio and the temporary clipboard are not stored between visits. Display preferences and your chosen input may be saved on your device.</p>
+  </section>
+
+  <section id="help">
+    <h2>Troubleshooting and privacy</h2>
+    <h3>No microphone or moving picture?</h3>
+    <p>Make sure you opened Voice Lab over HTTPS or on localhost. Allow microphone access in your browser and computer settings. Open <strong>Settings</strong>, check <strong>Audio input</strong>, and press <strong>Record</strong> again. Capture stops when the page is hidden or the microphone is interrupted.</p>
+    <h3>Can't open a file?</h3>
+    <p>Try a WAV or MP3 file supported by your browser. Very large recordings can take time or exceed your device's memory. Voice Lab does not upload the file.</p>
+    <h3>Can't play or edit?</h3>
+    <p>Stop the microphone first. Select a part for copy or cut. For paste, choose an insertion position and make sure the clipboard and recording use the same sample rate. If your browser asks for permission to play sound, allow it.</p>
+    <h3>What is saved or sent?</h3>
+    <p>Audio is processed locally and is not uploaded. It stays in memory unless you explicitly export it. Your browser may remember display preferences and the selected input; it does not save microphone consent or audio as Voice Lab preferences.</p>
+  </section>
+</main>
+</body>
+</html>
